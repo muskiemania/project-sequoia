@@ -1,0 +1,172 @@
+ul.persons
+{
+list-style: none;
+margin: 0;
+padding: 0;
+border: none;
+}
+
+ul.persons li
+{
+display: table;
+padding: 5px 5px 5px 5px;
+margin-top: 2px;
+border-bottom: 1px solid #888888;
+border-right: 1px solid #888888;
+border-top: 1px solid #ffffff;
+border-left: 1px solid #ffffff;
+background-color: #cccccc;
+color: #000;
+text-decoration: none;
+width: 300px;
+height: 44px;
+font-family: 'Carrois Gothic SC', sans-serif;
+line-height: 16px;
+}
+
+ul.persons li:hover
+{
+border-top: 1px solid #888888;
+border-left: 1px solid #888888;
+border-bottom: 1px solid #ffffff;
+border-right: 1px solid #ffffff;
+}
+
+ul.persons li.male
+{
+background-color: #ccccff;
+}
+
+ul.persons li.male:hover
+{
+background-color: #8888ff;
+}
+
+ul.persons li.female
+{
+background-color: #ffcccc;
+}
+
+ul.persons li.female:hover
+{
+background-color: #ff8888;
+}
+
+ul.persons li.deceased
+{
+color: #888888;
+}
+
+ul.persons li.deceased:hover
+{
+color: #ffffff;
+}
+
+ul.persons li .icon
+{
+float: right;
+margin-left: 3px;
+}
+
+ul.persons li .info
+{
+float: left;
+margin-left: 5px;
+}
+
+ul.persons li div
+{
+display: table-cell;
+vertical-align: middle;
+padding-right:3px;
+}
+
+.info .name, .info .dates
+{
+display: block;
+}
+
+.info .dates
+{
+font-size: 0.8em;
+}
+
+.rightArrow
+{
+display: block;
+height: 33px;
+width: 8px;
+background: url("images/right_arrow.png") no-repeat;
+}
+
+.deceased .rightArrow
+{
+opacity: 0.5;
+}
+
+.deceased:hover .rightArrow
+{
+opacity: 1.0;
+}
+
+.sex
+{
+display: block;
+height: 33px;
+width: 29px;
+}
+
+.rip
+{
+display: none;
+height: 33px;
+width: 29px;
+}
+
+.deceased:hover .rightArrow
+{
+background: url("images/right_arrow_inv.png") no-repeat;
+}
+
+.male .sex
+{
+background: url("images/male.png") no-repeat;
+}
+.male.deceased .sex
+{
+background: url("images/male.png") no-repeat;
+opacity: 0.3;
+}
+.male.deceased:hover .sex
+{
+background: url("images/male_inv.png") no-repeat;
+opacity: 1.0
+}
+
+.female .sex
+{
+background: url("images/female.png") no-repeat;
+}
+.female.deceased .sex
+{
+background: url("images/female.png") no-repeat;
+opacity: 0.3;
+}
+.female.deceased:hover .sex
+{
+background: url("images/female_inv.png") no-repeat;
+opacity: 1.0;
+}
+
+.deceased .rip
+{
+display:block;
+background: url("images/deceased.png") no-repeat;
+opacity: 0.3;
+}
+.deceased:hover .rip
+{
+display:block;
+background: url("images/deceased_inv.png") no-repeat;
+opacity: 1.0;
+}
