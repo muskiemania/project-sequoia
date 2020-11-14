@@ -1,1 +1,12 @@
-hello world
+App is Multi-Faceted:
+
+- web
+-- to view family tree data and traverse a family tree
+-- react.js SPA
+-- hosted via s3
+- api
+-- to feed web view(s)
+-- api gateway + lambda
+- ops
+-- to periodically re-serialize data. For initial cost-saving measures data will be stored in S3 instead of docdb or dynamodb or elasticsearch
+
