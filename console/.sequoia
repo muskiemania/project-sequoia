@@ -1,0 +1,9 @@
+
+[AWS.GENERAL]
+cli_profile=sequoia
+
+[AWS.S3]
+bucket=project-sequoia
+region=us-east-2
+prefix=muskiemania
+kms=project-sequoia-muskiemania
