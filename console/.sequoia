@@ -1,6 +1,6 @@
 
 [AWS.GENERAL]
-cli_profile=sequoia
+cli_profile=project-sequoia-console
 
 [AWS.S3]
 bucket=project-sequoia

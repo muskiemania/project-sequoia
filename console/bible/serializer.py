@@ -8,6 +8,7 @@ class BibleSerializer:
     def serialize(self, bible):
 
         # need CLI profile
+        _profile = self._config['AWS.GENERAL']['cli_profile']
 
         # need bucket name
         _bucket = self._config['AWS.S3']['bucket_name']
@@ -18,7 +19,7 @@ class BibleSerializer:
 
         # first write index
         _ix = bible.get_pages()
-        s3 = boto3.client('s3')
+        s3 = boto3.Session(profile_name=_profile).client('s3')
         s3.put_object(
             Bucket=_bucket,
             Key=f'{_prefix}/_index.json',
