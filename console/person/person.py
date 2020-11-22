@@ -24,17 +24,19 @@ class Person:
             raise TypeError('expecting born to be ISO date string')
 
         try:
-            _born = datetime.fromisoformat(born)
+            _born = datetime.datetime.fromisoformat(born)
         except:
             raise
+        else:
+            _born = _born.isoformat('|').split('|')[0]
 
         _ix = surname[0].lower()
 
         return {
-            '_id': _id,
+            '_id': str(_id),
             '_ix': _ix,
             'givenName': given_name,
             'surname': surname,
             'born': _born,
-            'sex': sex
+            'sex': sex[0].upper()
         }
