@@ -2,8 +2,8 @@
 
 class Bible:
 
-    def __init__(self):
-        self._index = {}
+    def __init__(self, index={}):
+        self._index = index
 
     def get_index(self):
         return list(self._index.keys())
@@ -28,3 +28,11 @@ class Bible:
     def serialize(self, serializer):
 
         serializer.serialize(self)
+        return True
+
+    @staticmethod
+    def deserialize(self, deserializer):
+
+        _bible = Bible()
+        _bible._index = deserializer.deserialize()
+        return _bible

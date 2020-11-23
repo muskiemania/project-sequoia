@@ -7,3 +7,9 @@ bucket=project-sequoia
 region=us-east-2
 prefix=muskiemania
 kms_key_id=alias/project-sequoia-muskiemania
+
+[AWS.KMS]
+kms_key_id=alias/project-sequoia-muskiemania
+
+[LOCAL]
+filename=.muskiemania.local
