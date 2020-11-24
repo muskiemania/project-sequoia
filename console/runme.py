@@ -3,7 +3,7 @@ import argparse
 import string
 
 from bible import bible, serializer_factory, s3_serializer, local_serializer
-from person import person
+from person import person, born
 from helpers import config_helpers
 
 from tabulate import tabulate
@@ -19,6 +19,53 @@ if __name__ == '__main__':
         default='local',
         required=False,
         help='sets the datasource to read from'
+    )
+    _parser.add_argument('-E', 
+        action='store',
+        type=str, 
+        choices=list(string.ascii_lowercase),
+        required=False,
+        help='sets the edit mode'
+    )
+    _parser.add_argument('-id', 
+        action='store', 
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets id of person'
+    )
+    _parser.add_argument('-born', 
+        action='store_true', 
+        required=False,
+        help='sets birth data for person'
+    )
+    _parser.add_argument('-on', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets date for event'
+    )
+    _parser.add_argument('-city', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets city for event location'
+    )
+    _parser.add_argument('-state', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets state for event location'
+    )
+    _parser.add_argument('-country', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets country for event location'
     )
     _parser.add_argument('-T', 
         action='store', 
@@ -53,23 +100,35 @@ if __name__ == '__main__':
     # first must read no matter what
     if _args.R:
         _serializer = serializer_factory.SerializerFactory.generate(_args.R, _config)
-        _bible = _serializer.deserialize()
+        _bible = bible.Bible.deserialize(_serializer)
+
+    if _args.E:
+        _page = _bible.get_persons(_args.E.lower())
+        _id = _args.id
+
+        if _id not in _page:
+            raise KeyError(f'id {_id} not found in page \'{_args.E.lower()}\'')
+        _person = person.Person(_page[_id])
+        if _args.born:
+            _born = born.Born(_person).load(_args)
+            _bible.set(_args.E.lower(), _id, 'born', _born)
 
     if _args.O:
-        _page = _bible[_args.O.lower()]
+        _page = _bible.get_persons(_args.O.lower())
 
         print('\n'.join([str(person.Person(v)) for (k,v) in _page.items()]))
 
     if _args.T:
-        _page = _bible[_args.T.lower()]
+        _page = _bible.get_persons(_args.T.lower())
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
-        _data = [[person['givenName'], '?', person['surname'], person['born'], person['sex'], person['_id']] for person in _page.values()]
+        _data = [[person['givenName'], '?', person['surname'], person['born']['on'], person['sex'], person['_id']] for person in _page.values()]
         print(tabulate(_data, headers=_headers))
 
     # write must be left until last...but not always required
     if not _args.O and not _args.T and _args.W:
+
         _serializer = serializer_factory.SerializerFactory.generate(_args.W, _config)
-        _serializer.serialize(_bible)
+        _bible.serialize(_serializer)
 
     #me = person.Person.create('justin', 'muskivitch', '1982-02-16', 'm')
 

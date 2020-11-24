@@ -15,6 +15,9 @@ class Bible:
 
         return self._index[page]
 
+    def set(self, page, _id, section, _value):
+        self._index[page][_id][section] = _value
+
     def add_person(self, person):
         
         _ix = person['_ix']
@@ -31,7 +34,7 @@ class Bible:
         return True
 
     @staticmethod
-    def deserialize(self, deserializer):
+    def deserialize(deserializer):
 
         _bible = Bible()
         _bible._index = deserializer.deserialize()
