@@ -3,7 +3,7 @@ import argparse
 import string
 
 from bible import bible, serializer_factory, s3_serializer, local_serializer
-from person import person, born
+from person import person, born, basic
 from helpers import config_helpers
 
 from tabulate import tabulate
@@ -33,6 +33,40 @@ if __name__ == '__main__':
         type=str,
         required=False,
         help='sets id of person'
+    )
+    _parser.add_argument('-basic', 
+        action='store_true', 
+        required=False,
+        help='sets basic info for person (given, middle, surname, sex)'
+    )
+    _parser.add_argument('-given', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets given name for person'
+    )
+    _parser.add_argument('-middle', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets middle name for person'
+    )
+    _parser.add_argument('-surname', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets surname for person'
+    )
+    _parser.add_argument('-sex', 
+        action='store',
+        nargs='?',
+        type=str.lower,
+        choices=['m', 'male', 'f', 'female'],
+        required=False,
+        help='sets sex for person'
     )
     _parser.add_argument('-born', 
         action='store_true', 
@@ -109,6 +143,9 @@ if __name__ == '__main__':
         if _id not in _page:
             raise KeyError(f'id {_id} not found in page \'{_args.E.lower()}\'')
         _person = person.Person(_page[_id])
+        if _args.basic:
+            _basic = basic.Basic(_person).load(_args)
+            _bible.set(_args.E.lower(), _id, 'basic', _basic)
         if _args.born:
             _born = born.Born(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'born', _born)
@@ -121,7 +158,7 @@ if __name__ == '__main__':
     if _args.T:
         _page = _bible.get_persons(_args.T.lower())
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
-        _data = [[person['givenName'], '?', person['surname'], person['born']['on'], person['sex'], person['_id']] for person in _page.values()]
+        _data = [[person['basic']['given'], person['basic']['middle'][0] if person['basic']['middle'] else '?', person['basic']['surname'], person['born']['on'], person['sex'], person['_id']] for person in _page.values()]
         print(tabulate(_data, headers=_headers))
 
     # write must be left until last...but not always required
