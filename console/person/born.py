@@ -1,6 +1,8 @@
 import datetime
 import traceback
 
+from helpers import location_helpers
+
 class Born:
 
     def __init__(self, person):
@@ -10,10 +12,9 @@ class Born:
             self._data = dict(person).get('born')
             self.year = None
 
-            self.__city = None
-            self.__state = None
-            self.__country = None
             self.__parents = None
+
+            self.__location_helpers = None
         except:
             traceback.print_exc()
 
@@ -33,15 +34,10 @@ class Born:
         
         self._data['on'] = self.__born.isoformat('|').split('|')[0]
 
-        if args.city:
-            self.__city = args.city
-            self._data['city'] = self.__city
-        if args.state:
-            self.__state = args.state
-            self._data['state'] = self.__state
-        if args.country:
-            self.__country = args.country
-            self._data['country'] = self.__country
+        self.__location_helpers = location_helpers.LocationHelpers.load(args)
+        self._data['city'] = self.__location_helpers.city
+        self._data['state'] = self.__location_helpers.state
+        self._data['country'] = self.__location_helpers.country
 
         return self._data
 
@@ -61,9 +57,8 @@ class Born:
                 self.__born = datetime.datetime.fromisoformat(_born)
                 self.year = self.__born.year
 
-            self.__city = self._data.get('city')
-            self.__state = self._data.get('state')
-            self.__country = self._data.get('country')
+            self.__location_helpers = location_helpers.LocationHelpers(self._data.get('city'), self._data.get('state'), self._data.get('country'))
+
             self.__parents = self._data.get('parents')
 
         return self
@@ -77,26 +72,7 @@ class Born:
         # ST                    ST (CTY)
         # CTY
 
-        if self.__city and not self.__state and not self.__country:
-            _output += f' in {self.__city}'
-
-        if self.__city and self.__state and not self.__country:
-            _output += f' in {self.__city}, {self.__state}'
-
-        if self.__city and self.__state and self.__country:
-            _output += f' in {self.__city}, {self.__state} ({self.__country})'
-
-        if self.__city and not self.__state and self.__country:
-            _output += f' in {self.__city} ({self.__country})'
-
-        if not self.__city and self.__state and not self.__country:
-            _output += f' in {self.__state}'
-
-        if not self.__city and self.__state and self.__country:
-            _output += f' in {self.__state} ({self.__country})'
-
-        if not self.__city and not self.__state and self.__country:
-            _output += f' in {self.__country}'
+        _output += str(self.__location_helpers)
 
         if self.__parents:
 
