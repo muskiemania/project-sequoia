@@ -27,6 +27,13 @@ if __name__ == '__main__':
         required=False,
         help='gets TOC for a single page'
     )
+    _parser.add_argument('-O', 
+        action='store', 
+        type=str, 
+        choices=list(string.ascii_lowercase),
+        required=False,
+        help='gets textualized output for a single page'
+    )
     _parser.add_argument('-W', 
         action='store', 
         type=str, 
@@ -48,17 +55,19 @@ if __name__ == '__main__':
         _serializer = serializer_factory.SerializerFactory.generate(_args.R, _config)
         _bible = _serializer.deserialize()
 
+    if _args.O:
+        _page = _bible[_args.O.lower()]
+
+        print('\n'.join([str(person.Person(v)) for (k,v) in _page.items()]))
+
     if _args.T:
         _page = _bible[_args.T.lower()]
-
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
         _data = [[person['givenName'], '?', person['surname'], person['born'], person['sex'], person['_id']] for person in _page.values()]
-
         print(tabulate(_data, headers=_headers))
 
     # write must be left until last...but not always required
-    if not _args.T and _args.W:
-        print('W')
+    if not _args.O and not _args.T and _args.W:
         _serializer = serializer_factory.SerializerFactory.generate(_args.W, _config)
         _serializer.serialize(_bible)
 
