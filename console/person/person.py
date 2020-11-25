@@ -9,11 +9,11 @@ class Person:
         self._data = data
 
     @staticmethod
-    def create(given_name='', surname='', born='', sex=''):
+    def create(given='', middle='', surname='', sex='', born=''):
 
         _id = uuid.uuid4()
 
-        if not isinstance(given_name, str):
+        if not isinstance(given, str):
             raise TypeError('given_name must be a string')
 
         if not isinstance(surname, str):
@@ -25,26 +25,19 @@ class Person:
         if not sex.lower() in ['m', 'male', 'f', 'female']:
             raise ValueError(f'unknown sex: {sex}')
 
-        if not isinstance(born, str):
-            raise TypeError('expecting born to be ISO date string')
-
-        try:
-            _born = datetime.datetime.fromisoformat(born)
-        except:
-            raise
-        else:
-            _born = _born.isoformat('|').split('|')[0]
-
         _ix = surname[0].lower()
 
         return Person({
             '_id': str(_id),
             '_ix': _ix,
             'basic': {
-                'givenName': given_name,
+                'given': given,
+                'middle': middle,
                 'surname': surname,
-                'born': _born,
                 'sex': sex[0].upper()
+            },
+            'born': {
+                'on': born
             }
         })
 

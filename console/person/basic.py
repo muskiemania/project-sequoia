@@ -6,7 +6,6 @@ class Basic:
     def __init__(self, person):
     
         try:
-            self.__person = person
             self._data = dict(person).get('basic')
         except:
             traceback.print_exc()

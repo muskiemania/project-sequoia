@@ -20,13 +20,13 @@ class Bible:
 
     def add_person(self, person):
         
-        _ix = person['_ix']
-        _id = person['_id']
+        _ix = dict(person)['_ix']
+        _id = dict(person)['_id']
 
         if _ix not in self._index:
             self._index[_ix] = {}
 
-        self._index[_ix][_id] = person
+        self._index[_ix][_id] = dict(person)
 
     def serialize(self, serializer):
 

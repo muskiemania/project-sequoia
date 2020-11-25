@@ -34,7 +34,7 @@ class Born:
         
         self._data['on'] = self.__born.isoformat('|').split('|')[0]
 
-        self.__location_helpers = location_helpers.LocationHelpers.load(args)
+        self.__location_helpers = location_helpers.LocationHelpers().load(args)
         self._data['city'] = self.__location_helpers.city
         self._data['state'] = self.__location_helpers.state
         self._data['country'] = self.__location_helpers.country

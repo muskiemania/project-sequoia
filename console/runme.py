@@ -20,6 +20,11 @@ if __name__ == '__main__':
         required=False,
         help='sets the datasource to read from'
     )
+    _parser.add_argument('-C', 
+        action='store_true', 
+        required=False,
+        help='creates new person (given, middle, surname, sex)'
+    )
     _parser.add_argument('-E', 
         action='store',
         type=str, 
@@ -136,6 +141,16 @@ if __name__ == '__main__':
         _serializer = serializer_factory.SerializerFactory.generate(_args.R, _config)
         _bible = bible.Bible.deserialize(_serializer)
 
+    if _args.C:
+        _given = _args.given
+        _middle = _args.middle
+        _surname = _args.surname
+        _sex = _args.sex
+        _born = _args.on
+
+        _new_person = person.Person.create(_given, _middle, _surname, _sex, _born)
+        _bible.add_person(_new_person)
+
     if _args.E:
         _page = _bible.get_persons(_args.E.lower())
         _id = _args.id
@@ -152,13 +167,12 @@ if __name__ == '__main__':
 
     if _args.O:
         _page = _bible.get_persons(_args.O.lower())
-
         print('\n'.join([str(person.Person(v)) for (k,v) in _page.items()]))
 
     if _args.T:
         _page = _bible.get_persons(_args.T.lower())
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
-        _data = [[person['basic']['given'], person['basic']['middle'][0] if person['basic']['middle'] else '?', person['basic']['surname'], person['born']['on'], person['sex'], person['_id']] for person in _page.values()]
+        _data = [[person['basic']['given'], person['basic']['middle'][0] if person['basic']['middle'] else '?', person['basic']['surname'], person['born']['on'], person['basic']['sex'], person['_id']] for person in _page.values()]
         print(tabulate(_data, headers=_headers))
 
     # write must be left until last...but not always required
