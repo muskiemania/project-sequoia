@@ -7,6 +7,11 @@ class Person:
 
     def __init__(self, data):
         self._data = data
+        self.sort_key = None
+
+    def init(self):
+        self.sort_key = str(basic.Basic(self).init())
+        return self
 
     @staticmethod
     def create(given='', middle='', surname='', sex='', born=''):

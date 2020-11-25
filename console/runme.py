@@ -167,12 +167,15 @@ if __name__ == '__main__':
 
     if _args.O:
         _page = _bible.get_persons(_args.O.lower())
-        print('\n'.join([str(person.Person(v)) for (k,v) in _page.items()]))
+        _persons = sorted([person.Person(v).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
+
+        print('\n'.join([str(person) for person in _persons]))
 
     if _args.T:
         _page = _bible.get_persons(_args.T.lower())
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
-        _data = [[person['basic']['given'], person['basic']['middle'][0] if person['basic']['middle'] else '?', person['basic']['surname'], person['born']['on'], person['basic']['sex'], person['_id']] for person in _page.values()]
+        _persons = sorted([person.Person(v).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
+        _data = [[dict(person)['basic']['given'], dict(person)['basic']['middle'][0] if dict(person)['basic']['middle'] else '?', dict(person)['basic']['surname'], dict(person)['born']['on'], dict(person)['basic']['sex'], dict(person)['_id']] for person in _persons]
         print(tabulate(_data, headers=_headers))
 
     # write must be left until last...but not always required
