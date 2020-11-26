@@ -106,6 +106,15 @@ if __name__ == '__main__':
         required=False,
         help='sets country for event location'
     )
+    
+    _parser.add_argument('-parents', 
+        action='store',
+        nargs='+',
+        type=str,
+        required=False,
+        help='sets birth parents'
+    )
+
     _parser.add_argument('-T', 
         action='store', 
         type=str, 
@@ -140,7 +149,7 @@ if __name__ == '__main__':
     if _args.R:
         _serializer = serializer_factory.SerializerFactory.generate(_args.R, _config)
         _bible = bible.Bible.deserialize(_serializer)
-
+        _index = _bible.get_index()
     if _args.C:
         _given = _args.given
         _middle = _args.middle
@@ -152,12 +161,12 @@ if __name__ == '__main__':
         _bible.add_person(_new_person)
 
     if _args.E:
-        _page = _bible.get_persons(_args.E.lower())
+        _page = _bible.get_chapter(_args.E.lower())
         _id = _args.id
 
         if _id not in _page:
             raise KeyError(f'id {_id} not found in page \'{_args.E.lower()}\'')
-        _person = person.Person(_page[_id])
+        _person = person.Person(_page[_id], _index)
         if _args.basic:
             _basic = basic.Basic(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'basic', _basic)
@@ -166,13 +175,16 @@ if __name__ == '__main__':
             _bible.set(_args.E.lower(), _id, 'born', _born)
 
     if _args.O:
-        _page = _bible.get_persons(_args.O.lower())
-        print('\n'.join([str(person.Person(v)) for (k,v) in _page.items()]))
+        _page = _bible.get_chapter(_args.O.lower())
+        _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
+
+        print('\n'.join([str(person) for person in _persons]))
 
     if _args.T:
-        _page = _bible.get_persons(_args.T.lower())
+        _page = _bible.get_chapter(_args.T.lower())
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
-        _data = [[person['basic']['given'], person['basic']['middle'][0] if person['basic']['middle'] else '?', person['basic']['surname'], person['born']['on'], person['basic']['sex'], person['_id']] for person in _page.values()]
+        _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
+        _data = [[dict(person)['basic']['given'], dict(person)['basic']['middle'][0] if dict(person)['basic']['middle'] else '?', dict(person)['basic']['surname'], dict(person)['born']['on'], dict(person)['basic']['sex'], dict(person)['_id']] for person in _persons]
         print(tabulate(_data, headers=_headers))
 
     # write must be left until last...but not always required

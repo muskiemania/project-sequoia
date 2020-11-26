@@ -12,15 +12,13 @@ class Born:
             self._data = dict(person).get('born')
             self.year = None
 
-            self.__parents = None
-
             self.__location_helpers = None
         except:
             traceback.print_exc()
 
     def load(self, args):
 
-        if not args.on:
+        if not args.on and not 'on' in self._data:
             raise ValueError('missing required \'on\'')
 
         if isinstance(self._data, str) or self._data is None:
@@ -28,16 +26,24 @@ class Born:
  
         if args.on:
             try:
-                self.__born = datetime.datetime.fromisoformat(args.on)
+                __born = datetime.datetime.fromisoformat(args.on)
+                self._data['on'] = __born.isoformat('|').split('|')[0]
             except:
                 raise
         
-        self._data['on'] = self.__born.isoformat('|').split('|')[0]
+        self.__location_helpers = location_helpers.LocationHelpers(self._data).load(args)
+        
+        self._data['city'] = self.__location_helpers.city or self._data['city']
+        self._data['state'] = self.__location_helpers.state or self._data['state']
+        self._data['country'] = self.__location_helpers.country or self._data['country']
 
-        self.__location_helpers = location_helpers.LocationHelpers().load(args)
-        self._data['city'] = self.__location_helpers.city
-        self._data['state'] = self.__location_helpers.state
-        self._data['country'] = self.__location_helpers.country
+        self._data['parents'] = set(self._data['parents']) if 'parents' in self._data else set()
+        if args.parents:
+            self._data['parents'] = self._data['parents'].union(set(args.parents))
+
+        _index = set([_id for (_id, _) in self.__person._index.items()])
+        self._data['parents'].intersection_update(_index)
+        self._data['parents'] = list(self._data['parents'])
 
         return self._data
 
@@ -57,9 +63,7 @@ class Born:
                 self.__born = datetime.datetime.fromisoformat(_born)
                 self.year = self.__born.year
 
-            self.__location_helpers = location_helpers.LocationHelpers(self._data.get('city'), self._data.get('state'), self._data.get('country'))
-
-            self.__parents = self._data.get('parents')
+            self.__location_helpers = location_helpers.LocationHelpers(self._data)
 
         return self
 
@@ -74,18 +78,19 @@ class Born:
 
         _output += str(self.__location_helpers)
 
-        if self.__parents:
+        if 'parents' in self._data:
 
-            _father = self.__parents.get('father')
-            _mother = self.__parents.get('mother')
-            _parents = list(filter(None, [_father, _mother]))
+            print('PARENTS')
+            print(self._data['parents'])
+            print(self.__person._index)
+            # must peruse index to fetch summaries for parents, sort by sex
+            _parents = [self.__person._index[_id] for _id in self._data['parents']]
+            is_male = lambda x: '(m)' in x
+            _parents = sorted(_parents, key=lambda x: (is_male(x), x), reverse=True)
 
-            if len(_parents) == 1:
-                _output += ' to parent'
+            _output += ' to '
+            _output += ' and '.join(_parents)
 
-            if len(_parents) == 2:
-                _output += f' to parent1 and parent2'
-        
         return _output
 
     def __dict__(self):

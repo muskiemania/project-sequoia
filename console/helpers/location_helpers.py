@@ -2,23 +2,30 @@ import traceback
 
 class LocationHelpers:
 
-    def __init__(self, city=None, state=None, country=None):
+    def __init__(self, data):
     
-        try:
-            self.city = city
-            self.state = state
-            self.country = country
-        except:
-            traceback.print_exc()
+        self._data = data
+
+    @property
+    def city(self):
+        return self._data.get('city')
+
+    @property
+    def state(self):
+        return self._data.get('state')
+
+    @property
+    def country(self):
+        return self._data.get('country')
 
     def load(self, args):
 
         if args.city:
-            self.city = args.city
+            self._data['city'] = args.city
         if args.state:
-            self.state = args.state
+            self._data['state'] = args.state
         if args.country:
-            self.country = args.country
+            self._data['country'] = args.country
 
         return self
 
