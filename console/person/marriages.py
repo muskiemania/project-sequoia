@@ -1,5 +1,6 @@
 import datetime
 import traceback
+import re
 
 from helpers import location_helpers
 
@@ -26,7 +27,7 @@ class Marriages:
         elif args.r:
             self._remove_marriage(args)
         elif args.e:
-            self._edit_marriage
+            self._edit_marriage(args)
 
         '''
         _num = args.num
@@ -73,7 +74,7 @@ class Marriages:
             except:
                 raise
         
-        __location_helpers = location_helpers.LocationHelpers({}).load(args)
+        __location_helpers = location_helpers.LocationHelpers(_marriage[_ix]).load(args)
         
         if __location_helpers.city:
             _marriage[_ix]['city'] = __location_helpers.city
@@ -136,12 +137,14 @@ class Marriages:
         if __location_helpers.country:
             self._data[args.num]['country'] = __location_helpers.country
 
+        _children = set(self._data[args.num]['children'] if 'children' in self._data[args.num] else [])
         if args.children:
-            self._data[args.num]['children'] = self._data[args.num]['children'].union(set(args.parents))
+            _children = _children.union(set(args.children))
 
         _index = set([_id for (_id, _) in self.__person._index.items()])
-        self._data[args.num]['children'].intersection_update(_index)
-        self._data[args.num]['children'] = list(self._data[args.num]['children'])
+
+        _children.intersection_update(_index)
+        self._data[args.num]['children'] = list(_children)
 
         return True
 
@@ -169,8 +172,6 @@ class Marriages:
     def __str__(self):
         # Born Mmm dd, YYYY (? in City (?, ST) (? (CTY))) (? to SURNAME, FATHER MI (YYYY-)) (? and  SURNAME, MOTHER MI (YYYY-))
 
-        print(self._data)
-
         _marriages = []
 
         for _key in sorted(self._data.keys()):
@@ -180,7 +181,7 @@ class Marriages:
 
             if 'on' in self._data[_key]:
                 __marriage = datetime.datetime.fromisoformat(self._data[_key]['on'])
-                self._data[args.num]['on'] = __marriage.isoformat('|').split('|')[0]
+                self._data[_key]['on'] = __marriage.isoformat('|').split('|')[0]
                 _output += ' on ' + __marriage.strftime('%b. %d, %Y')
 
             __location_helpers = location_helpers.LocationHelpers(self._data[_key])
@@ -191,7 +192,7 @@ class Marriages:
                 _children = [self.__person._index[_id] for _id in self._data[_key]['children']]
                 _birth_year = lambda x: int(re.search('\((\d{4})\-(\d{4})?\)$', x).group(1))
                 _is_male = lambda x: '(m)' not in x
-                _children = sorted(_children, key=lambda x: (_birth_year(x), is_male(x)))
+                _children = sorted(_children, key=lambda x: (_birth_year(x), _is_male(x)))
 
                 if len(_children) == 1:
                     _output += f'. CHILDREN: {_children[0]}' + '.'

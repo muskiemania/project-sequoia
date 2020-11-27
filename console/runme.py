@@ -154,6 +154,15 @@ if __name__ == '__main__':
         help='sets marriage number for lookup validation'
     )
 
+    _parser.add_argument('-children', 
+        action='store',
+        nargs='+',
+        type=str,
+        required=False,
+        help='sets children'
+    )
+
+
     _parser.add_argument('-T', 
         action='store', 
         type=str, 
