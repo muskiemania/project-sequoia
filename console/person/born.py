@@ -70,7 +70,7 @@ class Born:
     def __str__(self):
         # Born Mmm dd, YYYY (? in City (?, ST) (? (CTY))) (? to SURNAME, FATHER MI (YYYY-)) (? and  SURNAME, MOTHER MI (YYYY-))
 
-        _output = 'BORN: ' + self.__born.strftime('%b. %d, %Y')
+        _output = 'BORN on ' + self.__born.strftime('%b. %d, %Y')
 
         # city      city, ST    city (CTY)  city, ST (CTY)
         # ST                    ST (CTY)

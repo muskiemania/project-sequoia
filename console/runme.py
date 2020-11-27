@@ -3,7 +3,7 @@ import argparse
 import string
 
 from bible import bible, serializer_factory, s3_serializer, local_serializer
-from person import person, born, basic
+from person import person, basic, born, marriages
 from helpers import config_helpers
 
 from tabulate import tabulate
@@ -115,16 +115,57 @@ if __name__ == '__main__':
         help='sets birth parents'
     )
 
+    _parser.add_argument('-marriages', 
+        action='store_true', 
+        required=False,
+        help='adds/edits marriages for person'
+    )
+
+    _parser.add_argument('-a', 
+        action='store_true', 
+        required=False,
+        help='add marriage for person'
+    )
+
+    _parser.add_argument('-e', 
+        action='store_true', 
+        required=False,
+        help='edits marriage for person'
+    )
+
+    _parser.add_argument('-r', 
+        action='store_true', 
+        required=False,
+        help='removes marriage for person'
+    )
+
+    _parser.add_argument('-spouse', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets spouse for marriage'
+    )
+    _parser.add_argument('-num', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets marriage number for lookup validation'
+    )
+
     _parser.add_argument('-T', 
         action='store', 
         type=str, 
+        nargs='*',
         choices=list(string.ascii_lowercase),
         required=False,
         help='gets TOC for a single page'
     )
     _parser.add_argument('-O', 
         action='store', 
-        type=str, 
+        type=str,
+        nargs='*',
         choices=list(string.ascii_lowercase),
         required=False,
         help='gets textualized output for a single page'
@@ -174,18 +215,25 @@ if __name__ == '__main__':
         if _args.born:
             _born = born.Born(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'born', _born)
+        if _args.marriages:
+            _marriages = marriages.Marriages(_person).load(_args)
+            _bible.set(_args.E.lower(), _id, 'marriages', _marriages)
 
     if _args.O:
-        _page = _bible.get_chapter(_args.O.lower())
-        _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
+        for _each in sorted(set(_args.O)):
+            _page = _bible.get_chapter(_each.lower())
+            _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
 
-        print('\n'.join([str(person) for person in _persons]))
+            print('\n'.join([str(person) for person in _persons]))
 
     if _args.T:
-        _page = _bible.get_chapter(_args.T.lower())
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
-        _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
-        _data = [[dict(person)['basic']['given'], dict(person)['basic']['middle'][0] if dict(person)['basic']['middle'] else '?', dict(person)['basic']['surname'], dict(person)['born']['on'], dict(person)['basic']['sex'], dict(person)['_id']] for person in _persons]
+        _data = []
+        for _each in sorted(set(_args.T)):
+            _page = _bible.get_chapter(_each.lower())
+            _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
+            _data.extend([[dict(person)['basic']['given'], dict(person)['basic']['middle'][0] if dict(person)['basic']['middle'] else '?', dict(person)['basic']['surname'], dict(person)['born']['on'], dict(person)['basic']['sex'], dict(person)['_id']] for person in _persons])
+        
         print(tabulate(_data, headers=_headers))
 
     # write must be left until last...but not always required

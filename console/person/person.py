@@ -1,7 +1,7 @@
 import uuid
 import datetime
 
-from person import basic, born
+from person import basic, born, marriages
 
 class Person:
 
@@ -65,7 +65,8 @@ class Person:
     def __str__(self):
 
         _born = born.Born(self).init()
-        _body = ' '.join([str(i) for i in [_born]])
+        _marriages = marriages.Marriages(self).init()
+        _body = ', '.join([str(i) for i in [_born, _marriages]])
 
         return '\n'.join([self.summary, _body])
 
