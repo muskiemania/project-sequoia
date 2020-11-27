@@ -22,23 +22,23 @@ class S3Serializer:
         _kms_key_id = self._config['AWS.S3']['kms_key_id']
 
         # first write index
-        _ix = bible.get_index()
+        _toc = bible.get_toc()
         s3 = boto3.Session(profile_name=_profile).client('s3')
         s3.put_object(
             Bucket=_bucket,
             Key=f'{_prefix}/_index.json',
-            Body=json.dumps(_ix, indent=2, sort_keys=True),
+            Body=json.dumps(_toc, indent=2, sort_keys=True),
             ServerSideEncryption='aws:kms',
             SSEKMSKeyId=_kms_key_id
         )
 
         # then write pages
-        for _page in _ix:
+        for _chapter in _toc:
 
             s3.put_object(
                 Bucket=_bucket,
-                Key=f'{_prefix}/_{_page}.json',
-                Body=json.dumps(bible.get_persons(_page), indent=2, sort_keys=True),
+                Key=f'{_prefix}/_{_chapter}.json',
+                Body=json.dumps(bible.get_chapter(_chapter), indent=2, sort_keys=True),
                 ServerSideEncryption='aws:kms',
                 SSEKMSKeyId=_kms_key_id
             )
@@ -75,15 +75,15 @@ class S3Serializer:
             raise
 
         _index = {}
-        for _page in _ix:
+        for _chapter in _ix:
             try:
                 _object = s3.get_object(
                     Bucket=_bucket,
-                    Key=f'{_prefix}/_{_page}.json'
+                    Key=f'{_prefix}/_{_chapter}.json'
                 )
 
                 _decoded = _object['Body'].read().decode('utf-8')
-                _index[_page] = json.loads(_decoded)
+                _index[_chapter] = json.loads(_decoded)
             except:
                 raise
 

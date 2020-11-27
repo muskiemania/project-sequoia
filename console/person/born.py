@@ -79,10 +79,6 @@ class Born:
         _output += str(self.__location_helpers)
 
         if 'parents' in self._data:
-
-            print('PARENTS')
-            print(self._data['parents'])
-            print(self.__person._index)
             # must peruse index to fetch summaries for parents, sort by sex
             _parents = [self.__person._index[_id] for _id in self._data['parents']]
             is_male = lambda x: '(m)' in x

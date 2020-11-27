@@ -149,6 +149,7 @@ if __name__ == '__main__':
     if _args.R:
         _serializer = serializer_factory.SerializerFactory.generate(_args.R, _config)
         _bible = bible.Bible.deserialize(_serializer)
+
         _index = _bible.get_index()
     if _args.C:
         _given = _args.given

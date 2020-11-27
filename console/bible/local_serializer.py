@@ -2,6 +2,8 @@ import base64
 import json
 import boto3
 
+from bible import bible
+
 class LocalSerializer:
 
     def __init__(self, config):
@@ -50,4 +52,4 @@ class LocalSerializer:
                 CiphertextBlob=bytes(base64.b64decode(_encrypted))
             )
 
-        return json.loads(plaintext['Plaintext'])
+        return bible.Bible(json.loads(plaintext['Plaintext']))

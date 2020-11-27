@@ -11,6 +11,7 @@ class Bible:
         # so every person _id and their summary
         # sorted by summary text
         _index = []
+
         for (_, chapter) in self._index.items():
             for (_id, _person) in chapter.items():
                 _index.append((_id, person.Person(_person, None).summary))
@@ -28,8 +29,8 @@ class Bible:
 
         return self._index[page]
 
-    def set(self, page, _id, section, _value):
-        self._index[page][_id][section] = _value
+    def set(self, chapter, _id, section, _value):
+        self._index[chapter][_id][section] = _value
 
     def add_person(self, person):
         
@@ -49,6 +50,4 @@ class Bible:
     @staticmethod
     def deserialize(deserializer):
 
-        _bible = Bible()
-        _bible._index = deserializer.deserialize()
-        return _bible
+        return deserializer.deserialize()
