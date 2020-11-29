@@ -199,7 +199,7 @@ class Marriages:
                 if len(_children) == 2:
                     _output += f'. CHILDREN: ' + ' and '.join(_children) + '.'
                 if len(_children) > 2:
-                    _output += f'. CHILDREN: ' + ', '.join(_children[:-2])
+                    _output += f'. CHILDREN: ' + ', '.join(_children[:-1])
                     _output += ' and ' + _children[-1] + '.'
 
             _marriages.append(_output)

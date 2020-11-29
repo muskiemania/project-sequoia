@@ -63,6 +63,8 @@ class PDFHelpers:
                     print('new chapter overflows')
                 
                     if self.__column_number == 1:
+                        self._pdf.set_xy(4.25 * 72, 72)
+                        self._pdf.multi_cell(72 * 0.25, 10.0, '\n'.join(['|' for _ in range(64)]))
                         self._pdf.set_xy(4.75 * 72, 72)
                         self.__column_number = 2
                         print('***** SECOND COL *****')
@@ -103,6 +105,8 @@ class PDFHelpers:
                     print('next sentence overflows')
 
                     if self.__column_number == 1:
+                        self._pdf.set_xy(4.25 * 72, 72)
+                        self._pdf.multi_cell(72 * 0.25, 10.0, '\n'.join(['|' for _ in range(64)]))
                         self._pdf.set_xy(4.75 * 72, 72)
                         self.__column_number = 2
                         print('***** SECOND COL *****')
@@ -160,6 +164,8 @@ class PDFHelpers:
                     print('new section overflows')
                 
                     if _column_number == 1:
+                        self._pdf.set_xy(4.25 * 72, 72)
+                        self._pdf.multi_cell(72 * 0.25, 10.0, '\n'.join(['|' for _ in range(64)]))
                         self._pdf.set_xy(4.75 * 72, 72)
                         _column_number = 2
                         print('***** SECOND COL *****')
@@ -190,6 +196,8 @@ class PDFHelpers:
                     print('name overflows')
                 
                     if _column_number == 1:
+                        self._pdf.set_xy(4.25 * 72, 72)
+                        self._pdf.multi_cell(72 * 0.25, 10.0, '\n'.join(['|' for _ in range(64)]))
                         self._pdf.set_xy(4.75 * 72, 72)
                         _column_number = 2
                         print('***** SECOND COL *****')
@@ -212,7 +220,7 @@ class PDFHelpers:
                 print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
         self._pdf.set_xy(72, (10 * 72) + 20)
-        self._pdf.multi_cell(72 * 6.5, 10.0, f'-- Page {self.__index_page()} --', 0, 'C')
+        self._pdf.multi_cell(72 * 6.5, 10.0, f'-- {self.__index_page()} --', 0, 'C')
  
         while self._pdf.page_no() % 4 > 0:
             self._pdf.add_page()

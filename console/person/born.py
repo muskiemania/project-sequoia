@@ -33,9 +33,9 @@ class Born:
         
         self.__location_helpers = location_helpers.LocationHelpers(self._data).load(args)
         
-        self._data['city'] = self.__location_helpers.city or self._data['city']
-        self._data['state'] = self.__location_helpers.state or self._data['state']
-        self._data['country'] = self.__location_helpers.country or self._data['country']
+        self._data['city'] = self.__location_helpers.city or self._data.get('city')
+        self._data['state'] = self.__location_helpers.state or self._data.get('state')
+        self._data['country'] = self.__location_helpers.country or self._data.get('country')
 
         self._data['parents'] = set(self._data['parents']) if 'parents' in self._data else set()
         if args.parents:
