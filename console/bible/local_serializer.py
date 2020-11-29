@@ -21,15 +21,16 @@ class LocalSerializer:
         _kms_key_id = self._config['AWS.KMS']['kms_key_id']
 
         # encode index data
-        kms = boto3.Session(profile_name=_profile).client('kms')
-        ciphertext = kms.encrypt(
-            KeyId=_kms_key_id,
-            Plaintext=json.dumps(bible._index).encode('utf-8')
-        )
+        #kms = boto3.Session(profile_name=_profile).client('kms')
+        #ciphertext = kms.encrypt(
+        #    KeyId=_kms_key_id,
+        #    Plaintext=json.dumps(bible._index).encode('utf-8')
+        #)
 
         # write encoded to local file
         with open(_file, 'w') as _local:
-            _local.write(base64.b64encode(ciphertext['CiphertextBlob']).decode('ascii'))
+            #_local.write(base64.b64encode(ciphertext['CiphertextBlob']).decode('ascii'))
+            _local.write(json.dumps(bible._index, indent=4))
 
         return True
 
@@ -45,11 +46,12 @@ class LocalSerializer:
         _kms_key_id = self._config['AWS.KMS']['kms_key_id']
 
         # read encoded data from local file
-        kms = boto3.Session(profile_name=_profile).client('kms')
+        #kms = boto3.Session(profile_name=_profile).client('kms')
         with open(_file, 'r') as _local:
             _encrypted = _local.read()
-            plaintext = kms.decrypt(
-                CiphertextBlob=bytes(base64.b64decode(_encrypted))
-            )
+        #    plaintext = kms.decrypt(
+        #        CiphertextBlob=bytes(base64.b64decode(_encrypted))
+        #    )
 
-        return bible.Bible(json.loads(plaintext['Plaintext']))
+        #return bible.Bible(json.loads(plaintext['Plaintext']))
+        return bible.Bible(json.loads(_encrypted))
