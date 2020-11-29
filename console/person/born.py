@@ -60,7 +60,11 @@ class Born:
         if isinstance(self._data, dict):
             _born = self._data.get('on')
             if _born:
-                self.__born = datetime.datetime.fromisoformat(_born)
+                try:
+                    self.__born = datetime.datetime.fromisoformat(_born)
+                except:
+                    self.__born = datetime.datetime(int(_born), 1, 1)
+
                 self.year = self.__born.year
 
             self.__location_helpers = location_helpers.LocationHelpers(self._data)
