@@ -72,10 +72,6 @@ class Born:
 
         _output = 'BORN on ' + self.__born.strftime('%b. %d, %Y')
 
-        # city      city, ST    city (CTY)  city, ST (CTY)
-        # ST                    ST (CTY)
-        # CTY
-
         _output += str(self.__location_helpers)
 
         if 'parents' in self._data:

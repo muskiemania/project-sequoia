@@ -233,7 +233,7 @@ if __name__ == '__main__':
             _page = _bible.get_chapter(_each.lower())
             _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
 
-            print('\n'.join([str(person) for person in _persons]))
+            print('\n' + '\n\n'.join([str(person) for person in _persons]))
 
     if _args.T:
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
