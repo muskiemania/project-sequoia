@@ -20,7 +20,7 @@ class Bible:
 
     def get_toc(self):
         
-        return list(self._index.keys())
+        return list(sorted(self._index.keys()))
 
     def get_chapter(self, page):
 
