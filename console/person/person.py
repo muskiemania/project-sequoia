@@ -9,15 +9,18 @@ class Person:
         self._data = _data
         self._index = _index
         self.sort_key = None
-
     def init(self):
         self.sort_key = str(basic.Basic(self).init())
+
         return self
 
     @staticmethod
-    def create(given='', middle='', surname='', sex='', born=''):
+    def create(given='', middle='', surname='', sex='', born='', index=None):
 
         _id = uuid.uuid4()
+
+        if index is None:
+            raise ValueError('index cannot be None')
 
         if not isinstance(given, str):
             raise TypeError('given_name must be a string')
@@ -45,7 +48,7 @@ class Person:
             'born': {
                 'on': born
             }
-        })
+        }, index)
 
     @property
     def summary(self):
