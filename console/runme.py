@@ -212,7 +212,7 @@ if __name__ == '__main__':
         _sex = _args.sex
         _born = _args.on
 
-        _new_person = person.Person.create(_given, _middle, _surname, _sex, _born)
+        _new_person = person.Person.create(_given, _middle, _surname, _sex, _born, _index)
         _bible.add_person(_new_person)
 
     if _args.E:
