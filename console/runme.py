@@ -4,7 +4,7 @@ import string
 
 from bible import bible, serializer_factory, s3_serializer, local_serializer
 from person import person, basic, born, marriages
-from helpers import config_helpers
+from helpers import config_helpers, pdf_helpers
 
 from tabulate import tabulate
 
@@ -162,7 +162,6 @@ if __name__ == '__main__':
         help='sets children'
     )
 
-
     _parser.add_argument('-T', 
         action='store', 
         type=str, 
@@ -178,6 +177,11 @@ if __name__ == '__main__':
         choices=list(string.ascii_lowercase),
         required=False,
         help='gets textualized output for a single page'
+    )
+    _parser.add_argument('-PDF', 
+        action='store_true', 
+        required=False,
+        help='generates PDF report'
     )
     _parser.add_argument('-W', 
         action='store', 
@@ -235,6 +239,17 @@ if __name__ == '__main__':
 
             print('\n' + '\n\n'.join([str(person) for person in _persons]))
 
+    if _args.PDF:
+        _toc = _bible.get_toc()
+        if _toc:
+            _pdf = pdf_helpers.PDFHelpers().init()
+        while _toc:
+            _chapter = _toc.pop(0)
+            _pages = _bible.get_chapter(_chapter)
+            _pdf.write_chapter(_chapter, sorted([person.Person(v, _index).init() for (k, v) in _pages.items()], key=lambda x: x.sort_key))
+        
+        _pdf.complete()
+
     if _args.T:
         _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
         _data = []
@@ -246,7 +261,7 @@ if __name__ == '__main__':
         print(tabulate(_data, headers=_headers))
 
     # write must be left until last...but not always required
-    if not _args.O and not _args.T and _args.W:
+    if not _args.O and not _args.PDF and not _args.T and _args.W:
 
         _serializer = serializer_factory.SerializerFactory.generate(_args.W, _config)
         _bible.serialize(_serializer)
