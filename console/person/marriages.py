@@ -75,7 +75,9 @@ class Marriages:
                 raise
         
         __location_helpers = location_helpers.LocationHelpers(_marriage[_ix]).load(args)
-        
+
+        if __location_helpers.venue:
+            _marriage[_ix]['venue'] = __location_helpers.venue
         if __location_helpers.city:
             _marriage[_ix]['city'] = __location_helpers.city
         if __location_helpers.state:
@@ -130,6 +132,8 @@ class Marriages:
         
         __location_helpers = location_helpers.LocationHelpers({}).load(args)
         
+        if __location_helpers.venue:
+            self._data[args.num]['venue'] = __location_helpers.venue
         if __location_helpers.city:
             self._data[args.num]['city'] = __location_helpers.city
         if __location_helpers.state:
@@ -195,16 +199,19 @@ class Marriages:
                 _children = sorted(_children, key=lambda x: (_birth_year(x), _is_male(x)))
 
                 if len(_children) == 1:
-                    _output += f'. CHILDREN: {_children[0]}' + '.'
+                    _output += f'. CHILDREN: {_children[0]}'
                 if len(_children) == 2:
-                    _output += f'. CHILDREN: ' + ' and '.join(_children) + '.'
+                    _output += f'. CHILDREN: ' + ' and '.join(_children)
                 if len(_children) > 2:
                     _output += f'. CHILDREN: ' + ', '.join(_children[:-1])
-                    _output += ' and ' + _children[-1] + '.'
+                    _output += ' and ' + _children[-1]
 
             _marriages.append(_output)
 
-        return ', '.join(_marriages)
+        return ', '.join(_marriages) + '.'
 
     def __dict__(self):
         return self._data
+
+    def __bool__(self):
+        return bool(self._data)
