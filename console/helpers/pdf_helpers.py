@@ -67,9 +67,6 @@ class PDFHelpers:
                 _lines_wrapped_sentence = 1 + len(_wrapped_sentence.split('\n'))
             
                 if self._pdf.get_y() > ((72 * self.__LINE_HEIGHT_PTS) - (self.__LINE_HEIGHT_PTS * (1 + _lines_chapter_title + 1 + 1 + _lines_wrapped_sentence))):
-                
-                    print('new chapter overflows')
-                
                     if self.__column_number == 1:
                         self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72)
                         self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join(['|' for _ in range(64)]), 0, 'C')
@@ -106,11 +103,7 @@ class PDFHelpers:
                 _wrapped_sentence = self.__wrapper.fill(_synopsis)
 
                 _lines_wrapped_sentence = len(_wrapped_sentence.split('\n'))
-                print(f'not new chapter: y is {self._pdf.get_y()}, sentence is {_lines_wrapped_sentence}')
-                print((72 * 10) - (10 * _lines_wrapped_sentence))
                 if self._pdf.get_y() > ((72 * 10) - (10 * (1 + _lines_wrapped_sentence))):
-
-                    print('next sentence overflows')
 
                     if self.__column_number == 1:
                         self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72)

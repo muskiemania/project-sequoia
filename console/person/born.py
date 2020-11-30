@@ -76,7 +76,7 @@ class Born:
 
         _output = 'BORN on ' + self.__born.strftime('%b. %d, %Y')
 
-        _output += str(self.__location_helpers)
+        _output += str(self.__location_helpers) + '.'
 
         if 'parents' in self._data and self._data['parents']:
             # must peruse index to fetch summaries for parents, sort by sex
@@ -84,10 +84,12 @@ class Born:
             is_male = lambda x: '(m)' in x
             _parents = sorted(_parents, key=lambda x: (is_male(x), x), reverse=True)
 
-            _output += ' to '
-            _output += ' and '.join(_parents)
+            _sex = self._data.get('sex')
+            _sexes = {'m': 'Son of ', 'f': 'Daughter of '}
+            _output += ' ' + _sexes.get(_sex, 'Parents: ')
+            _output += ' and '.join(_parents) + '.'
 
-        return _output + '.'
+        return _output
 
     def __dict__(self):
         return self._data
