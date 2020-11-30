@@ -20,11 +20,21 @@ class PDFHelpers:
 
         self.__index_start = 0
 
+        self.__COLUMN_WIDTH_CHARS = 43
+        self.__LINE_HEIGHT_PTS = 10.0
+        self.__SINGLE_COLUMN_WIDTH_IN = 6.5
+        self.__DUAL_COLUMN_WIDTH_IN = 3.0
+        self.__GUTTER_X_IN = 4.0
+        self.__GUTTER_WIDTH_IN = 0.5
+        self.__FIRST_COLUMN_X_IN = 1.0
+        self.__SECOND_COLUMN_X_IN = 4.5
+        self.__TOP_PTS = 72
+
     def init(self):
         self._pdf.set_auto_page_break(False)
         self._pdf.set_font('Courier', '', 8.0)
         self.__wrapper = textwrap.TextWrapper()
-        self.__wrapper.width = 40
+        self.__wrapper.width = self.__COLUMN_WIDTH_CHARS
         
         self.__write_title_page()
 
@@ -42,7 +52,7 @@ class PDFHelpers:
 
         if self.__first_chapter:
             self._pdf.add_page()
-            self._pdf.set_xy(72, 72)
+            self._pdf.set_xy(self.__TOP_PTS, self.__TOP_PTS)
             self.__column_number = 1
             self.__first_chapter = False
 
@@ -54,42 +64,40 @@ class PDFHelpers:
                 _wrapped_sentence = self.__wrapper.fill(_synopsis)
 
                 _lines_chapter_title = len(_chapter_title.split('\r\n'))
-                _lines_wrapped_sentence = len(_wrapped_sentence.split('\n'))
-                print(f'new chapter: y is {self._pdf.get_y()}, title is {_lines_chapter_title} sentence is {_lines_wrapped_sentence}')
-                print((72 * 10) - (10 * (_lines_chapter_title + 1 + _lines_wrapped_sentence)))
+                _lines_wrapped_sentence = 1 + len(_wrapped_sentence.split('\n'))
             
-                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + _lines_chapter_title + 1 + _lines_wrapped_sentence))):
+                if self._pdf.get_y() > ((72 * self.__LINE_HEIGHT_PTS) - (self.__LINE_HEIGHT_PTS * (1 + _lines_chapter_title + 1 + 1 + _lines_wrapped_sentence))):
                 
                     print('new chapter overflows')
                 
                     if self.__column_number == 1:
-                        self._pdf.set_xy(4.25 * 72, 72)
-                        self._pdf.multi_cell(72 * 0.25, 10.0, '\n'.join(['|' for _ in range(64)]))
-                        self._pdf.set_xy(4.75 * 72, 72)
+                        self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72)
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
                         self.__column_number = 2
                         print('***** SECOND COL *****')
 
                     elif self.__column_number == 2:
                         self._pdf.set_xy(72, 52)
-                        self._pdf.multi_cell(72 * 2.75, 10.0, f'{_this_page[0]}...')
-                        self._pdf.set_xy(72 * 4.75, 52)
-                        self._pdf.multi_cell(72 * 2.75, 10.0, f'...{_this_page[-1]}', 0, 'R')
+                        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'{self.__this_page[0]}...')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
+                        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'...{self.__this_page[-1]}', 0, 'R')
                         self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * 6.5, 10.0, f'-- Page {self.__page_number()} --', 0, 'C')
+                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'-- Page {self.__page_number()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self.__this_page = []
                         self._pdf.set_xy(72, 72)
-                        self._column_number = 1
+                        self.__column_number = 1
                         print('***** NEW   PAGE *****')
                         print('***** FIRST  COL *****')
 
-                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * 4.75, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
-                self._pdf.multi_cell(72 * 2.75, 10.0, _chapter_title)
+                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _chapter_title)
                 print(_chapter_title + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
-                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * 4.75, self._pdf.get_y() + 10)
-                self._pdf.multi_cell(72 * 2.75, 10.0, _wrapped_sentence)
-                self.__this_page.append(_wrapped_sentence.split(' ')[0])
+                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join([person.extended, _wrapped_sentence]))
+                self.__this_page.append(person.summary.split(',')[0])
                 print(_wrapped_sentence + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
                 self.__index.append((person.summary, self.__page_number()))
                 _begin_chapter = False
@@ -100,24 +108,24 @@ class PDFHelpers:
                 _lines_wrapped_sentence = len(_wrapped_sentence.split('\n'))
                 print(f'not new chapter: y is {self._pdf.get_y()}, sentence is {_lines_wrapped_sentence}')
                 print((72 * 10) - (10 * _lines_wrapped_sentence))
-                if self._pdf.get_y() > ((72 * 10) - (10 * _lines_wrapped_sentence)):
+                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + _lines_wrapped_sentence))):
 
                     print('next sentence overflows')
 
                     if self.__column_number == 1:
-                        self._pdf.set_xy(4.25 * 72, 72)
-                        self._pdf.multi_cell(72 * 0.25, 10.0, '\n'.join(['|' for _ in range(64)]))
-                        self._pdf.set_xy(4.75 * 72, 72)
+                        self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72)
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
                         self.__column_number = 2
                         print('***** SECOND COL *****')
 
                     elif self.__column_number == 2:
                         self._pdf.set_xy(72, 52)
-                        self._pdf.multi_cell(72 * 2.75, 10.0, f'{_this_page[0]}...')
-                        self._pdf.set_xy(72 * 4.75, 52)
-                        self._pdf.multi_cell(72 * 2.75, 10.0, f'...{_this_page[-1]}', 0, 'R')
+                        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{self.__this_page[0]}...')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
+                        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'...{self.__this_page[-1]}', 0, 'R')
                         self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * 6.5, 10.0, f'-- Page {self.__page_number()} --', 0, 'C')
+                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- Page {self.__page_number()} --', 0, 'C')
  
                         self._pdf.add_page()
                         self.__this_page = []
@@ -127,20 +135,20 @@ class PDFHelpers:
                         print('***** FIRST  COL *****')
 
 
-                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * 4.75, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
-                self._pdf.multi_cell(72 * 2.75, 10.0, _wrapped_sentence)
-                self.__this_page.append(_wrapped_sentence.split(' ')[0])
+                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, '\n'.join([person.extended, _wrapped_sentence]))
+                self.__this_page.append(person.summary.split(',')[0])
                 self.__index.append((person.summary, self.__page_number()))
                 print(_wrapped_sentence + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
  
     def complete(self):
         if self.__this_page:
             self._pdf.set_xy(72, 52)
-            self._pdf.multi_cell(72 * 2.75, 10.0, f'{self.__this_page[0]}...')
-            self._pdf.set_xy(72 * 4.75, 52)
-            self._pdf.multi_cell(72 * 2.75, 10.0, f'...{self.__this_page[-1]}', 0, 'R')
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{self.__this_page[0]}...')
+            self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'...{self.__this_page[-1]}', 0, 'R')
             self._pdf.set_xy(72, (10 * 72) + 20)
-            self._pdf.multi_cell(72 * 6.5, 10.0, f'-- Page {self.__page_number()} --', 0, 'C')
+            self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- Page {self.__page_number()} --', 0, 'C')
  
         self.__write_index()
 
@@ -152,7 +160,7 @@ class PDFHelpers:
         self._pdf.add_page()
 
         self._pdf.set_xy(72, 72)
-        self._pdf.multi_cell(72 * 6.5, 10.0, art.text2art('index', font='ogre'))
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('index', font='ogre'))
         _column_number = 1
         _current_letter = ''
 
@@ -164,15 +172,15 @@ class PDFHelpers:
                     print('new section overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(4.25 * 72, 72)
-                        self._pdf.multi_cell(72 * 0.25, 10.0, '\n'.join(['|' for _ in range(64)]))
-                        self._pdf.set_xy(4.75 * 72, 72)
+                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
                         self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * 6.5, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -180,14 +188,14 @@ class PDFHelpers:
                         print('***** NEW   PAGE *****')
                         print('***** FIRST  COL *****')
 
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * 4.75, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
-                self._pdf.multi_cell(72 * 2.75, 10.0, f'[{_current_letter.upper()}]')
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'[{_current_letter.upper()}]')
                 print(_current_letter + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * 4.75, self._pdf.get_y() + 10)
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
                 
-                _indexed_summary = summary + '  ' + ('.'*(40 - (2 + 2 + len(str(page_num)) + len(summary)))) + ('  ' + str(page_num))
+                _indexed_summary = summary + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + 2 + len(str(page_num)) + len(summary)))) + ('  ' + str(page_num))
         
-                self._pdf.multi_cell(72 * 2.75, 10.0, _indexed_summary)
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
                 print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
             elif summary[0].upper() == _current_letter:
@@ -196,15 +204,15 @@ class PDFHelpers:
                     print('name overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(4.25 * 72, 72)
-                        self._pdf.multi_cell(72 * 0.25, 10.0, '\n'.join(['|' for _ in range(64)]))
-                        self._pdf.set_xy(4.75 * 72, 72)
+                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
                         self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * 6.5, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -212,15 +220,15 @@ class PDFHelpers:
                         print('***** NEW   PAGE *****')
                         print('***** FIRST  COL *****')
 
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * 4.75, self._pdf.get_y())
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                 
-                _indexed_summary = summary + '  ' + ('.'*(40 - (2 + 2 + len(str(page_num)) + len(summary)))) + ('  ' + str(page_num))
+                _indexed_summary = summary + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + 2 + len(str(page_num)) + len(summary)))) + ('  ' + str(page_num))
                 
-                self._pdf.multi_cell(72 * 2.75, 10.0, _indexed_summary)
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
                 print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
         self._pdf.set_xy(72, (10 * 72) + 20)
-        self._pdf.multi_cell(72 * 6.5, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
  
         while self._pdf.page_no() % 4 > 0:
             self._pdf.add_page()
@@ -229,24 +237,24 @@ class PDFHelpers:
         self._pdf.add_page()
 
         self._pdf.set_xy(72, 72)
-        self._pdf.multi_cell(72 * 6.5, 10.0, art.text2art('project', font='georgia11'))
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('project', font='georgia11'))
 
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * 6.5, 30.0, art.text2art(' ', font='sequoia'), 0, 'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 30.0, art.text2art(' ', font='sequoia'), 0, 'C')
 
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * 6.5, 10.0, art.text2art('   sequoia', font='georgia11'), 0, 'R')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('   sequoia', font='georgia11'), 0, 'R')
 
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * 6.5, 10.0, art.text2art(f' ', font='mini'), 0, 'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art(f' ', font='mini'), 0, 'C')
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * 6.5, 10.0, art.text2art(f'prepared for:', font='mini'), 0, 'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art(f'prepared for:', font='mini'), 0, 'C')
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * 6.5, 10.0, art.text2art(f'{prepared_for}', font='mini'), 0, 'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art(f'{prepared_for}', font='mini'), 0, 'C')
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * 6.5, 10.0, art.text2art(f'on {datetime.datetime.now().strftime("%B %d, %Y")}', font='mini'), 0, 'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art(f'on {datetime.datetime.now().strftime("%B %d, %Y")}', font='mini'), 0, 'C')
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * 6.5, 10.0, art.text2art(f' ', font='mini'), 0, 'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art(f' ', font='mini'), 0, 'C')
  
         _tree = """
         MMMMMMMMMMMMMNOdxk0WMMMMMMMMMMMMMM
@@ -274,6 +282,6 @@ class PDFHelpers:
         _two_trees = [t.strip().replace('M', ' ') for t in _two_trees]
         _two_trees = '\n'.join([t + '     ' + t for t in _two_trees])
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * 6.5, 10.0, _two_trees, 0,'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, _two_trees, 0,'C')
 
 
