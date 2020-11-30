@@ -32,6 +32,22 @@ class Basic:
     def init(self):
         return self
 
+    @property
+    def extended(self):
+        _surname = self._data.get('surname')
+        _given = self._data.get('given')
+        _middle = self._data.get('middle')
+        _sex = self._data.get('sex')
+
+        _output = f'{_surname.upper()}, {_given.upper()}'
+        if _middle:
+            _output += f' {_middle.upper()}'
+
+        _output += f' ({_sex.lower()})'
+
+        return _output
+
+           
     def __str__(self):
         # Born Mmm dd, YYYY (? in City (?, ST) (? (CTY))) (? to SURNAME, FATHER MI (YYYY-)) (? and  SURNAME, MOTHER MI (YYYY-))
 
