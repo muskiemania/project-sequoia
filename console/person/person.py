@@ -1,7 +1,7 @@
 import uuid
 import datetime
 
-from person import basic, born, marriages
+from person import basic, born, marriages, died
 
 class Person:
 
@@ -9,6 +9,7 @@ class Person:
         self._data = _data
         self._index = _index
         self.sort_key = None
+
     def init(self):
         self.sort_key = str(basic.Basic(self).init())
 
@@ -51,10 +52,27 @@ class Person:
         }, index)
 
     @property
+    def extended(self):
+        _basic = basic.Basic(self).init()
+        _born = born.Born(self).init()
+        _dead = died.Died(self).init()
+
+        _summary = _basic.extended
+        
+        if _dead:
+            _summary += f' ({_born.year}-{_dead.year})'
+        if not _dead:
+            _summary += f' ({_born.year}-)'
+        
+        return _summary
+
+
+
+    @property
     def summary(self):
         _basic = basic.Basic(self).init()
         _born = born.Born(self).init()
-        _dead = False
+        _dead = died.Died(self).init()
 
         _summary = str(_basic)
         
@@ -69,9 +87,14 @@ class Person:
 
         _born = born.Born(self).init()
         _marriages = marriages.Marriages(self).init()
-        _body = ', '.join([str(i) for i in [_born, _marriages]])
-
-        return '\n'.join([self.summary, _body])
+        _died = died.Died(self).init()
+        _events = [_born]
+        if _marriages:
+            _events.append(_marriages)
+        if _died:
+            _events.append(_died)
+        
+        return ' '.join([str(i) for i in _events])
 
     def __iter__(self):
         for key in self._data:
