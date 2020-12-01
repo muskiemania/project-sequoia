@@ -8,11 +8,8 @@ class Person:
     def __init__(self, _data, _index):
         self._data = _data
         self._index = _index
-        self.sort_key = None
 
     def init(self):
-        self.sort_key = str(basic.Basic(self).init())
-
         return self
 
     @staticmethod
