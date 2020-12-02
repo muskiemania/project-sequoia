@@ -187,7 +187,23 @@ class PDFHelpers:
                 self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
                 
                 _indexed_summary = summary + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + 2 + len(str(page_num)) + len(summary)))) + ('  ' + str(page_num))
-        
+
+                if len(summary) > 37:
+                    # if the summary line is wider than the column, 
+                    # then need to split the summary at the appropriate place 
+                    # and then put the dots and page number on the next line
+                    _split = _indexed_summary.find(' ', 30)
+                    
+                    if _split == -1 and len(summary) <= self.__COLUMN_WIDTH_CHARS:
+                        _line_1 = summary
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
+                    else:
+                        _line_1 = summary[:_split]
+                        _line_2 = summary[_split:]
+                        _line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(str(page_num))))) + ('  ' + str(page_num))
+                    
+                    _indexed_summary = '\n'.join([_line_1, _line_2])
+
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
                 print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
@@ -216,7 +232,23 @@ class PDFHelpers:
                 self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                 
                 _indexed_summary = summary + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + 2 + len(str(page_num)) + len(summary)))) + ('  ' + str(page_num))
-                
+ 
+                if len(summary) > 37:
+                    # if the summary line is wider than the column, 
+                    # then need to split the summary at the appropriate place 
+                    # and then put the dots and page number on the next line
+                    _split = _indexed_summary.find(' ', 30)
+                    
+                    if _split == -1 and len(summary) <= self.__COLUMN_WIDTH_CHARS:
+                        _line_1 = summary
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
+                    else:
+                        _line_1 = summary[:_split]
+                        _line_2 = summary[_split:].split('.')[0].strip()
+                        _line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(str(page_num))))) + ('  ' + str(page_num))
+                    
+                    _indexed_summary = '\n'.join([_line_1, _line_2])
+
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
                 print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 

@@ -67,6 +67,13 @@ if __name__ == '__main__':
         required=False,
         help='sets surname for person'
     )
+    _parser.add_argument('-suffix', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets suffix for person'
+    )
     _parser.add_argument('-sex', 
         action='store',
         nargs='?',
@@ -252,7 +259,7 @@ if __name__ == '__main__':
     if _args.O:
         for _each in sorted(set(_args.O)):
             _page = _bible.get_chapter(_each.lower())
-            _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.summary)
+            _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
             print('\n\n'.join(['\n'.join([person.extended, str(person)]) for person in _persons]))
 
     if _args.PDF:
@@ -262,7 +269,7 @@ if __name__ == '__main__':
         while _toc:
             _chapter = _toc.pop(0)
             _pages = _bible.get_chapter(_chapter)
-            _pdf.write_chapter(_chapter, sorted([person.Person(v, _index).init() for (k, v) in _pages.items()], key=lambda x: x.summary))
+            _pdf.write_chapter(_chapter, sorted([person.Person(v, _index).init() for (k, v) in _pages.items()], key=lambda x: x.sort_key))
         
         _pdf.complete()
 
@@ -271,7 +278,7 @@ if __name__ == '__main__':
         _data = []
         for _each in sorted(set(_args.T)):
             _page = _bible.get_chapter(_each.lower())
-            _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.summary)
+            _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
             _data.extend([[dict(person)['basic']['given'], dict(person)['basic']['middle'][0] if dict(person)['basic']['middle'] else '?', dict(person)['basic']['surname'], dict(person)['born']['on'], dict(person)['basic']['sex'], dict(person)['_id']] for person in _persons])
         
         print(tabulate(_data, headers=_headers))

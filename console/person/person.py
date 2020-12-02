@@ -8,8 +8,12 @@ class Person:
     def __init__(self, _data, _index):
         self._data = _data
         self._index = _index
-
+        self.sort_key = None
+    
     def init(self):
+        _basic = basic.Basic(self).init()
+        _born = born.Born(self).init()
+        self.sort_key = f'{_basic.surname}, {_basic.given} {_basic.middle[0] if _basic.middle else ""} ({_born.year}'
         return self
 
     @staticmethod
@@ -63,8 +67,6 @@ class Person:
         
         return _summary
 
-
-
     @property
     def summary(self):
         _basic = basic.Basic(self).init()
@@ -79,7 +81,7 @@ class Person:
             _summary += f' ({_born.year}-)'
         
         return _summary
-
+    
     def __str__(self):
 
         _born = born.Born(self).init()
