@@ -11,6 +11,7 @@ class Born:
             self.__person = person
             self._data = dict(person).get('born')
             self.year = None
+            self.__sex = dict(person).get('basic').get('sex')
 
             self.__location_helpers = None
         except:
@@ -84,7 +85,7 @@ class Born:
             is_male = lambda x: '(m)' in x
             _parents = sorted(_parents, key=lambda x: (is_male(x), x), reverse=True)
 
-            _sex = self._data.get('sex')
+            _sex = self.__sex.lower()
             _sexes = {'m': 'Son of ', 'f': 'Daughter of '}
             _output += ' ' + _sexes.get(_sex, 'Parents: ')
             _output += ' and '.join(_parents) + '.'
