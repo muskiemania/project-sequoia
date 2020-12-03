@@ -67,7 +67,7 @@ class Died:
     def __str__(self):
         # Born Mmm dd, YYYY (? in City (?, ST) (? (CTY))) (? to SURNAME, FATHER MI (YYYY-)) (? and  SURNAME, MOTHER MI (YYYY-))
 
-        _output = 'DIED on ' + self.__born.strftime('%b. %d, %Y')
+        _output = 'DIED on ' + self.__died.strftime('%b. %d, %Y')
 
         _output += str(self.__location_helpers)
 
