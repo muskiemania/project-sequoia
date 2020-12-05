@@ -197,8 +197,10 @@ class PDFHelpers:
                     if _split == -1 and len(summary) <= self.__COLUMN_WIDTH_CHARS:
                         _line_1 = summary
                         _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
-                    else:
+                    elif summary[_split:].strip() == '':
                         _line_1 = summary[:_split]
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
+                    else:
                         _line_2 = summary[_split:]
                         _line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(str(page_num))))) + ('  ' + str(page_num))
                     
@@ -241,6 +243,9 @@ class PDFHelpers:
                     
                     if _split == -1 and len(summary) <= self.__COLUMN_WIDTH_CHARS:
                         _line_1 = summary
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
+                    elif summary[_split:].strip() == '':
+                        _line_1 = summary[:_split]
                         _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
                     else:
                         _line_1 = summary[:_split]
