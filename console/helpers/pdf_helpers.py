@@ -29,10 +29,11 @@ class PDFHelpers:
         self.__FIRST_COLUMN_X_IN = 1.0
         self.__SECOND_COLUMN_X_IN = 4.5
         self.__TOP_PTS = 72
+        self.__DEFAULT_FONT = 'Courier'
 
     def init(self):
         self._pdf.set_auto_page_break(False)
-        self._pdf.set_font('Courier', '', 8.0)
+        self._pdf.set_font(self.__DEFAULT_FONT, '', 8.0)
         self.__wrapper = textwrap.TextWrapper()
         self.__wrapper.width = self.__COLUMN_WIDTH_CHARS
         
@@ -90,10 +91,17 @@ class PDFHelpers:
                         print('***** FIRST  COL *****')
 
                 self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _chapter_title)
+                self._pdf.set_font('')
                 print(_chapter_title + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
                 self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join([person.extended, _wrapped_sentence]))
+                
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, person.extended)
+                self._pdf.set_font('')
+                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _wrapped_sentence)
                 self.__this_page.append(person.summary.split(',')[0])
                 print(_wrapped_sentence + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
                 self.__index.append((person.summary, self.__page_number()))
@@ -129,7 +137,11 @@ class PDFHelpers:
 
 
                 self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, '\n'.join([person.extended, _wrapped_sentence]))
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, person.extended)
+                self._pdf.set_font('')
+                self._pdf.set_xy(72 if self.__column_number ==1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _wrapped_sentence)
                 self.__this_page.append(person.summary.split(',')[0])
                 self.__index.append((person.summary, self.__page_number()))
                 print(_wrapped_sentence + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
@@ -153,7 +165,9 @@ class PDFHelpers:
         self._pdf.add_page()
 
         self._pdf.set_xy(72, 72)
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('index', font='ogre'))
+        self._pdf.set_font('')
         _column_number = 1
         _current_letter = ''
 
@@ -182,7 +196,11 @@ class PDFHelpers:
                         print('***** FIRST  COL *****')
 
                 self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'[{_current_letter.upper()}]')
+                self._pdf.set_font('')
+
                 print(_current_letter + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
                 self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
                 

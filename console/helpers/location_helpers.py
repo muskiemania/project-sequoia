@@ -68,7 +68,7 @@ class LocationHelpers:
 
         if self.city and not self.state and self.country:
             # for city + country will do city, cty
-            _output += f' in {self.city} {self.country}'
+            _output += f' in {self.city}, {self.country}'
 
         if not self.city and self.state and not self.country:
             # for state only, will do sta.
