@@ -1,7 +1,7 @@
 import uuid
 import datetime
 
-from person import basic, born, marriages, died
+from person import basic, born, marriages, died, buried
 
 class Person:
 
@@ -92,11 +92,14 @@ class Person:
         _born = born.Born(self).init()
         _marriages = marriages.Marriages(self).init()
         _died = died.Died(self).init()
+        _buried = buried.Buried(self).init()
         _events = [_born]
         if _marriages:
             _events.append(_marriages)
         if _died:
             _events.append(_died)
+        if _died and _buried:
+            _events.append(_buried)
         
         return ' '.join([str(i) for i in _events])
 

@@ -5,7 +5,7 @@ import string
 from itertools import chain
 
 from bible import bible, serializer_factory, s3_serializer, local_serializer
-from person import person, basic, born, marriages, died
+from person import person, basic, born, marriages, died, buried
 from helpers import config_helpers, pdf_helpers
 
 from tabulate import tabulate
@@ -91,6 +91,11 @@ if __name__ == '__main__':
         action='store_true', 
         required=False,
         help='sets death data for person'
+    )
+    _parser.add_argument('-buried', 
+        action='store_true', 
+        required=False,
+        help='sets burial data for person'
     )
     _parser.add_argument('-on', 
         action='store',
@@ -255,6 +260,9 @@ if __name__ == '__main__':
         if _args.died:
             _death = died.Died(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'died', _death)
+        if _args.buried:
+            _death = buried.Buried(_person).load(_args)
+            _bible.set(_args.E.lower(), _id, 'buried', _buried)
 
     if _args.O:
         for _each in sorted(set(_args.O)):
