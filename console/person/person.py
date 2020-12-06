@@ -14,7 +14,12 @@ class Person:
         _basic = basic.Basic(self).init()
         _born = born.Born(self).init()
         self.sort_key = f'{_basic.surname}, {_basic.given} {_basic.middle[0] if _basic.middle else ""} ({_born.year}'
+
         return self
+
+    @property
+    def inline_citations(self):
+        return ''
 
     @staticmethod
     def create(given='', middle='', surname='', sex='', born='', index=None):

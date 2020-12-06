@@ -63,6 +63,8 @@ class PDFHelpers:
             if _begin_chapter:
                 _chapter_title = art.text2art(chapter, 'ogre')
                 _wrapped_sentence = self.__wrapper.fill(_synopsis)
+                if person.inline_citations:
+                    _wrapped_sentence += '\n' + ' '.join(list('*'*22)) + '\n' + self._wrapper.fill(person.inline_citations)
 
                 _lines_chapter_title = len(_chapter_title.split('\r\n'))
                 _lines_wrapped_sentence = 1 + len(_wrapped_sentence.split('\n'))
@@ -109,6 +111,8 @@ class PDFHelpers:
 
             else:
                 _wrapped_sentence = self.__wrapper.fill(_synopsis)
+                if person.inline_citations:
+                    _wrapped_sentence += '\n' + ' '.join(list('*'*22)) + '\n' + self._wrapper.fill(person.inline_citations)
 
                 _lines_wrapped_sentence = len(_wrapped_sentence.split('\n'))
                 if self._pdf.get_y() > ((72 * 10) - (10 * (1 + _lines_wrapped_sentence))):
@@ -142,6 +146,7 @@ class PDFHelpers:
                 self._pdf.set_font('')
                 self._pdf.set_xy(72 if self.__column_number ==1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _wrapped_sentence)
+
                 self.__this_page.append(person.summary.split(',')[0])
                 self.__index.append((person.summary, self.__page_number()))
                 print(_wrapped_sentence + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
@@ -156,6 +161,9 @@ class PDFHelpers:
             self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- Page {self.__page_number()} --', 0, 'C')
  
         self.__write_index()
+
+        while self._pdf.page_no() % 4 > 0:
+            self._pdf.add_page()
 
         self._pdf.output('sample_fpdf.pdf', 'F')
 
@@ -280,6 +288,128 @@ class PDFHelpers:
  
         while self._pdf.page_no() % 4 > 0:
             self._pdf.add_page()
+
+    def __write_appendix_a(self):
+
+        self._pdf.add_page()
+
+        self._pdf.set_xy(72, 72)
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('appendix a', font='ogre'))
+        self._pdf.set_font('')
+        _current_letter = ''
+
+        for (summary, _) in self.__index:
+            if summary[0].upper() != _current_letter:
+                _current_letter = summary[0].upper()
+                # check if room for 1 + subheader + 1 + name
+                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1 + 1 + 1))):
+                    print('new section overflows')
+                
+                    if _column_number == 1:
+                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
+                        _column_number = 2
+                        print('***** SECOND COL *****')
+
+                    elif _column_number == 2:
+                        self._pdf.set_xy(72, (10 * 72) + 20)
+                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                    
+                        self._pdf.add_page()
+                        self._pdf.set_xy(72, 72)
+                        _column_number = 1
+                        print('***** NEW   PAGE *****')
+                        print('***** FIRST  COL *****')
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'[{_current_letter.upper()}]')
+                self._pdf.set_font('')
+
+                print(_current_letter + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
+                
+                _indexed_summary = summary + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + 2 + len(str(page_num)) + len(summary)))) + ('  ' + str(page_num))
+
+                if len(summary) > 37:
+                    # if the summary line is wider than the column, 
+                    # then need to split the summary at the appropriate place 
+                    # and then put the dots and page number on the next line
+                    _split = _indexed_summary.find(' ', 30)
+                    
+                    if _split == -1 and len(summary) <= self.__COLUMN_WIDTH_CHARS:
+                        _line_1 = summary
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
+                    elif summary[_split:].strip() == '':
+                        _line_1 = summary[:_split]
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
+                    else:
+                        _line_2 = summary[_split:]
+                        _line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(str(page_num))))) + ('  ' + str(page_num))
+                    
+                    _indexed_summary = '\n'.join([_line_1, _line_2])
+
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
+                print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+
+            elif summary[0].upper() == _current_letter:
+                # check if room for name
+                if self._pdf.get_y() > ((72 * 10) - 10):
+                    print('name overflows')
+                
+                    if _column_number == 1:
+                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
+                        _column_number = 2
+                        print('***** SECOND COL *****')
+
+                    elif _column_number == 2:
+                        self._pdf.set_xy(72, (10 * 72) + 20)
+                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                    
+                        self._pdf.add_page()
+                        self._pdf.set_xy(72, 72)
+                        _column_number = 1
+                        print('***** NEW   PAGE *****')
+                        print('***** FIRST  COL *****')
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                
+                _indexed_summary = summary + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + 2 + len(str(page_num)) + len(summary)))) + ('  ' + str(page_num))
+ 
+                if len(summary) > 37:
+                    # if the summary line is wider than the column, 
+                    # then need to split the summary at the appropriate place 
+                    # and then put the dots and page number on the next line
+                    _split = _indexed_summary.find(' ', 30)
+                    
+                    if _split == -1 and len(summary) <= self.__COLUMN_WIDTH_CHARS:
+                        _line_1 = summary
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
+                    elif summary[_split:].strip() == '':
+                        _line_1 = summary[:_split]
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
+                    else:
+                        _line_1 = summary[:_split]
+                        _line_2 = summary[_split:].split('.')[0].strip()
+                        _line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(str(page_num))))) + ('  ' + str(page_num))
+                    
+                    _indexed_summary = '\n'.join([_line_1, _line_2])
+
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
+                print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+
+        self._pdf.set_xy(72, (10 * 72) + 20)
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+ 
+        while self._pdf.page_no() % 4 > 0:
+            self._pdf.add_page()
+
+
 
     def __write_title_page(self, prepared_for='muskiemania'):
         self._pdf.add_page()
