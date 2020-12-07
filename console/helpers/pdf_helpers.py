@@ -227,6 +227,7 @@ class PDFHelpers:
                         _line_1 = summary[:_split]
                         _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page_num))))) + ('  ' + str(page_num))
                     else:
+                        _line_1 = summary[:_split]
                         _line_2 = summary[_split:]
                         _line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(str(page_num))))) + ('  ' + str(page_num))
                     
