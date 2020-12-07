@@ -73,7 +73,7 @@ class Marriages:
                 _marriage[_ix]['on'] = __marriage.isoformat('|').split('|')[0]
             except:
                 raise
-        
+
         __location_helpers = location_helpers.LocationHelpers(_marriage[_ix]).load(args)
 
         if __location_helpers.venue:
@@ -130,6 +130,20 @@ class Marriages:
             except:
                 raise
         
+        if args.divorced:
+            try:
+                __divorced = datetime.datetime.fromisoformat(args.divorced)
+                self._data[args.num]['divorced'] = _divorced.isoformat('|').split('|')[0]
+            except:
+                self._data[args.num]['divorced'] = True
+
+        if args.widowed:
+            try:
+                __widowed = datetime.datetime.fromisoformat(args.widowed)
+                self._data[args.num]['widowed'] = _widowed.isoformat('|').split('|')[0]
+            except:
+                self._data[args.num]['widowed'] = True
+
         __location_helpers = location_helpers.LocationHelpers({}).load(args)
         
         if __location_helpers.venue:
@@ -206,9 +220,23 @@ class Marriages:
                     _output += f'. CHILDREN: ' + ', '.join(_children[:-1])
                     _output += ' and ' + _children[-1]
 
+            if 'divorced' in self._data[_key]:
+                try:
+                    __divorce = datetime.datetime.fromisoformat(self._data[_key]['divorced'])
+                    _output += '. DIVORCED on ' + __divorce.strftime('%b. %d, %Y')
+                except:
+                    _output += '. DIVORCED'
+
+            if 'widowed' in self._data[_key]:
+                try:
+                    __widowed = datetime.datetime.fromisoformat(self._data[_key]['widowed'])
+                    _output += '. WIDOWED on ' + __widowed.strftime('%b. %d, %Y')
+                except:
+                    _output += '. WIDOWED'
+
             _marriages.append(_output)
 
-        return ', '.join(_marriages) + '.'
+        return '. '.join(_marriages) + '.'
 
     def __dict__(self):
         return self._data

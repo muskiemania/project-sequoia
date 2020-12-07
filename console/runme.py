@@ -187,7 +187,23 @@ if __name__ == '__main__':
         required=False,
         help='sets children'
     )
-
+    _parser.add_argument('-divorced', 
+        action='store',
+        nargs='?',
+        type=str,
+        const='true',
+        required=False,
+        help='sets divorce flag/date for marriage'
+    )
+    _parser.add_argument('-widowed', 
+        action='store',
+        nargs='?',
+        type=str,
+        const='true',
+        required=False,
+        help='sets widowed flag/date for marriage'
+    )
+ 
     _parser.add_argument('-T', 
         action='store', 
         type=str, 
