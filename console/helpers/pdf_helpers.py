@@ -100,7 +100,7 @@ class PDFHelpers:
                 self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
                 
                 self._pdf.set_font(self.__DEFAULT_FONT, 'B')
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, person.extended)
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, person.extended, 0, 'L')
                 self._pdf.set_font('')
                 self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _wrapped_sentence)
@@ -142,7 +142,7 @@ class PDFHelpers:
 
                 self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
                 self._pdf.set_font(self.__DEFAULT_FONT, 'B')
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, person.extended)
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, person.extended, 0, 'L')
                 self._pdf.set_font('')
                 self._pdf.set_xy(72 if self.__column_number ==1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _wrapped_sentence)

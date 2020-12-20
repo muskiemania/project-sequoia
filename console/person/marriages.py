@@ -194,16 +194,20 @@ class Marriages:
 
         for _key in sorted(self._data.keys()):
             _spouse_id = self._data[_key]['spouse']
-            _spouse_name = self.__person._index[_spouse_id]
-            _output = f'MARRIED to {_spouse_name}'
+            _output = ''
 
-            if 'on' in self._data[_key]:
-                __marriage = datetime.datetime.fromisoformat(self._data[_key]['on'])
-                self._data[_key]['on'] = __marriage.isoformat('|').split('|')[0]
-                _output += ' on ' + __marriage.strftime('%b. %d, %Y')
+            if _spouse_id != 'none':
 
-            __location_helpers = location_helpers.LocationHelpers(self._data[_key])
-            _output += str(__location_helpers)
+                _spouse_name = self.__person._index[_spouse_id]
+                _output = f'MARRIED to {_spouse_name}'
+
+                if 'on' in self._data[_key]:
+                    __marriage = datetime.datetime.fromisoformat(self._data[_key]['on'])
+                    self._data[_key]['on'] = __marriage.isoformat('|').split('|')[0]
+                    _output += ' on ' + __marriage.strftime('%b. %d, %Y')
+
+                __location_helpers = location_helpers.LocationHelpers(self._data[_key])
+                _output += str(__location_helpers)
 
             if 'children' in self._data[_key]:
                 # must peruse index to fetch summaries for parents, sort by sex
@@ -212,12 +216,15 @@ class Marriages:
                 _is_male = lambda x: '(m)' not in x
                 _children = sorted(_children, key=lambda x: (_birth_year(x), _is_male(x)))
 
+                if _spouse_id != 'none':
+                    _output += '. '
+
                 if len(_children) == 1:
-                    _output += f'. CHILDREN: {_children[0]}'
+                    _output += f'CHILDREN: {_children[0]}'
                 if len(_children) == 2:
-                    _output += f'. CHILDREN: ' + ' and '.join(_children)
+                    _output += f'CHILDREN: ' + ' and '.join(_children)
                 if len(_children) > 2:
-                    _output += f'. CHILDREN: ' + ', '.join(_children[:-1])
+                    _output += f'CHILDREN: ' + ', '.join(_children[:-1])
                     _output += ' and ' + _children[-1]
 
             if 'divorced' in self._data[_key]:
