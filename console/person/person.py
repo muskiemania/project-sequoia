@@ -1,7 +1,7 @@
 import uuid
 import datetime
 
-from person import basic, born, marriages, died, buried
+from person import basic, born, marriages, died, buried, images
 
 class Person:
 
@@ -71,6 +71,11 @@ class Person:
             _summary += f' ({_born.year}-)'
         
         return _summary
+
+    @property
+    def images(self):
+        _images = images.Images(self).init()
+        return _images.all()
 
     @property
     def summary(self):

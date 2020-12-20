@@ -5,7 +5,7 @@ import string
 from itertools import chain
 
 from bible import bible, serializer_factory, s3_serializer, local_serializer
-from person import person, basic, born, marriages, died, buried
+from person import person, basic, born, marriages, died, buried, images
 from helpers import config_helpers, pdf_helpers
 
 from tabulate import tabulate
@@ -203,7 +203,23 @@ if __name__ == '__main__':
         required=False,
         help='sets widowed flag/date for marriage'
     )
- 
+
+    _parser.add_argument('-img',
+        action='store',
+        nargs='?',
+        type=str,
+        choices=['P0', 'P1', 'P2'],
+        required=False,
+        help='sets image parameters'
+    )
+    _parser.add_argument('-src',
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets image source'
+    )
+
     _parser.add_argument('-T', 
         action='store', 
         type=str, 
@@ -279,6 +295,10 @@ if __name__ == '__main__':
         if _args.buried:
             _death = buried.Buried(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'buried', _buried)
+        if _args.img and _args.src:
+            _images = images.Images(_person).load(_args)
+            _bible.set(_args.E.lower(), _id, 'images', _images)
+        
 
     if _args.O:
         for _each in sorted(set(_args.O)):

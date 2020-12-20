@@ -21,6 +21,7 @@ class PDFHelpers:
         self.__index_start = 0
 
         self.__COLUMN_WIDTH_CHARS = 43
+        self.__COLUMN_WIDTH_CHARS_PHOTO = 28
         self.__LINE_HEIGHT_PTS = 10.0
         self.__SINGLE_COLUMN_WIDTH_IN = 6.5
         self.__DUAL_COLUMN_WIDTH_IN = 3.0
@@ -48,6 +49,19 @@ class PDFHelpers:
 
     def __index_page(self):
         return roman.toRoman(self._pdf.page_no() - self.__index_start).lower()
+    
+    def __write_gutter(self):
+        self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72)
+        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+
+    def __write_footer(self):
+        self._pdf.set_xy(72, 52)
+        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'{self.__this_page[0]}...')
+        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
+        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'...{self.__this_page[-1]}', 0, 'R')
+        self._pdf.set_xy(72, (10 * 72) + 20)
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'-- Page {self.__page_number()} --', 0, 'C')
+ 
 
     def write_chapter(self, chapter, people, _begin_chapter=True):
 
@@ -59,56 +73,51 @@ class PDFHelpers:
 
         for person in people:
             _synopsis = str(person)
-        
-            if _begin_chapter:
-                _chapter_title = art.text2art(chapter, 'ogre')
-                _wrapped_sentence = self.__wrapper.fill(_synopsis)
-                if person.inline_citations:
-                    _wrapped_sentence += '\n' + ' '.join(list('*'*22)) + '\n' + self._wrapper.fill(person.inline_citations)
 
-                _lines_chapter_title = len(_chapter_title.split('\r\n'))
-                _lines_wrapped_sentence = 1 + len(_wrapped_sentence.split('\n'))
-            
-                if self._pdf.get_y() > ((72 * self.__LINE_HEIGHT_PTS) - (self.__LINE_HEIGHT_PTS * (1 + _lines_chapter_title + 1 + 1 + _lines_wrapped_sentence))):
-                    if self.__column_number == 1:
-                        self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72)
-                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join(['|' for _ in range(64)]), 0, 'C')
-                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
-                        self.__column_number = 2
-                        print('***** SECOND COL *****')
+            # must check size before writing...
+            _chapter_title = art.text2art(chapter, 'ogre')
+            _wrapped_sentence = self.__wrapper.fill(_synopsis)
 
-                    elif self.__column_number == 2:
-                        self._pdf.set_xy(72, 52)
-                        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'{self.__this_page[0]}...')
-                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
-                        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'...{self.__this_page[-1]}', 0, 'R')
-                        self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'-- Page {self.__page_number()} --', 0, 'C')
+            _lines_chapter_title = len(_chapter_title.split('\r\n')) if _begin_chapter else 0
+            _lines_wrapped_sentence = 1 + len(_wrapped_sentence.split('\n'))
+
+            if self._pdf.get_y() > ((72 * self.__LINE_HEIGHT_PTS) - (self.__LINE_HEIGHT_PTS * (1 + _lines_chapter_title + 1 + 1 + _lines_wrapped_sentence))):
+                
+                if self.__column_number == 1:
+                    self.__write_gutter()
+                    self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
+                    self.__column_number = 2
+                    print('***** SECOND COL *****')
+                
+                elif self.__column_number == 2:
+                    self.__write_footer()
                     
-                        self._pdf.add_page()
-                        self.__this_page = []
-                        self._pdf.set_xy(72, 72)
-                        self.__column_number = 1
-                        print('***** NEW   PAGE *****')
-                        print('***** FIRST  COL *****')
+                    self._pdf.add_page()
+                    self.__this_page = []
+                    self._pdf.set_xy(72, 72)
+                    self.__column_number = 1
+                    print('***** NEW   PAGE *****')
+                    print('***** FIRST  COL *****')
 
+            if _begin_chapter:
                 self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
                 self._pdf.set_font(self.__DEFAULT_FONT, 'B')
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _chapter_title)
                 self._pdf.set_font('')
                 print(_chapter_title + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
-                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
-                
-                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, person.extended, 0, 'L')
-                self._pdf.set_font('')
-                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _wrapped_sentence)
-                self.__this_page.append(person.summary.split(',')[0])
-                print(_wrapped_sentence + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
-                self.__index.append((person.summary, self.__page_number()))
-                _begin_chapter = False
+            
+            self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)    
+            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, person.extended, 0, 'L')
+            self._pdf.set_font('')
+            self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _wrapped_sentence)
+            self.__this_page.append(person.summary.split(',')[0])
+            print(_wrapped_sentence + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+            self.__index.append((person.summary, self.__page_number()))
+            _begin_chapter = False
 
+            """
             else:
                 _wrapped_sentence = self.__wrapper.fill(_synopsis)
                 if person.inline_citations:
@@ -150,7 +159,9 @@ class PDFHelpers:
                 self.__this_page.append(person.summary.split(',')[0])
                 self.__index.append((person.summary, self.__page_number()))
                 print(_wrapped_sentence + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
- 
+            """
+
+
     def complete(self):
         if self.__this_page:
             self._pdf.set_xy(72, 52)
