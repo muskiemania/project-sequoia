@@ -298,12 +298,12 @@ if __name__ == '__main__':
         _pdf.complete()
 
     if _args.T:
-        _headers = ['given', 'm.i.', 'surname', 'd.o.b.', 'sex', '_id']
+        _headers = ['given', 'm.i.', 'surname', 'suffix', 'd.o.b.', 'sex', '_id']
         _data = []
         for _each in sorted(set(_args.T)):
             _page = _bible.get_chapter(_each.lower())
             _persons = sorted([person.Person(v, _index).init() for (k,v) in _page.items()], key=lambda x: x.sort_key)
-            _data.extend([[dict(person)['basic']['given'], dict(person)['basic']['middle'][0] if dict(person)['basic']['middle'] else '?', dict(person)['basic']['surname'], dict(person)['born']['on'], dict(person)['basic']['sex'], dict(person)['_id']] for person in _persons])
+            _data.extend([[dict(person)['basic']['given'], dict(person)['basic']['middle'][0] if dict(person)['basic']['middle'] else '?', dict(person)['basic']['surname'], dict(person)['basic']['suffix'] if 'suffix' in dict(person)['basic'] else '', dict(person)['born']['on'], dict(person)['basic']['sex'], dict(person)['_id']] for person in _persons])
         
         print(tabulate(_data, headers=_headers))
 
