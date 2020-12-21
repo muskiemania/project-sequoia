@@ -30,8 +30,9 @@ class Images:
 
         return self
 
-    def all(self):
-        return [self.P1] if self.P1 else []
+    def all(self, _id):
+        
+        return [self.P1.format(id=_id, ver='P1')] if self.P1 else []
     
     @property
     def P1(self):

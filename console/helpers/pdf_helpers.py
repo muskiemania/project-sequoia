@@ -1,12 +1,17 @@
+import os
+import traceback
 import datetime
 import string
 import random
+import shutil
 
 import art
 import fpdf
 import requests
 import textwrap
 import roman
+
+from . import image_helpers
 
 class PDFHelpers:
 
@@ -32,7 +37,10 @@ class PDFHelpers:
         self.__TOP_PTS = 72
         self.__DEFAULT_FONT = 'Courier'
 
-    def init(self):
+        self._config = None
+        self._image_helpers = None
+
+    def init(self, _config):
         self._pdf.set_auto_page_break(False)
         self._pdf.set_font(self.__DEFAULT_FONT, '', 8.0)
         self.__wrapper = textwrap.TextWrapper()
@@ -41,6 +49,11 @@ class PDFHelpers:
         self.__write_title_page()
 
         self.__first_chapter = True
+
+        self._config = _config
+        self._image_helpers = image_helpers.ImageHelpers().init(_config)
+
+        print(self._image_helpers)
 
         return self
 
@@ -85,8 +98,8 @@ class PDFHelpers:
             _lines_chapter_title = len(_chapter_title.split('\r\n')) if _begin_chapter else 0
             _lines_for_person = len(_wrapped_extended) + len(_wrapped_synopsis)
 
-            if len(person.images) > 1:
-                _lines_for_person += 10
+            #if len(person.images) > 1:
+            #    _lines_for_person += 10
             if len(person.images) == 1:
                 self.__wrapper.width = self.__COLUMN_WIDTH_CHARS_IMAGE
                 _wrapped_extended = self.__wrapper.wrap(person.extended)
@@ -94,13 +107,12 @@ class PDFHelpers:
      
                 if len(_wrapped_extended) + len(_wrapped_synopsis) < 10:
                     _lines_for_person = 9
-                    break
-                _second_part = _wrapped_synopsis[(10 - len(_wrapped_extended)):]
-                _second_part = ' '.join(_second_part)
-                self.__wrapper.width = self.__COLUMN_WIDTH_CHARS_IMAGE
-                _wrapped_part = self.__wrapper.wrap(_second_part)
-                _lines_for_person = 10 + len(_wrapped_part)
-
+                else:
+                    _second_part = _wrapped_synopsis[(10 - len(_wrapped_extended)):]
+                    _second_part = ' '.join(_second_part)
+                    self.__wrapper.width = self.__COLUMN_WIDTH_CHARS_IMAGE
+                    _wrapped_part = self.__wrapper.wrap(_second_part)
+                    _lines_for_person = 10 + len(_wrapped_part)
 
             if self._pdf.get_y() > ((72 * self.__LINE_HEIGHT_PTS) - (self.__LINE_HEIGHT_PTS * (1 + _lines_chapter_title + 1 + _lines_for_person))):
                 
@@ -136,7 +148,28 @@ class PDFHelpers:
 
             if person.images and len(person.images) == 1:
 
-                self._pdf.rect(72 + (72 * (self.__DUAL_COLUMN_WIDTH_IN - 1)), self._pdf.get_y(), 72, 90, 'DF')
+                _x = (72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN) + (72 * (self.__DUAL_COLUMN_WIDTH_IN - 1))
+                _y = self._pdf.get_y()
+                
+                try:
+                    _url = self._image_helpers.get_presigned_url(person.images[0])
+                    _r = requests.get(_url, stream=True)
+
+                    if _r.status_code != 200:
+                        raise Exception('not 200 from aws')
+
+                    _dest = 'tmp/' + person.images[0]
+
+                    with open(_dest, 'wb') as f:
+                        shutil.copyfileobj(_r.raw, f)
+
+                    self._pdf.image(_dest, _x, _y, 72, 90, type='png')
+                except:
+                    traceback.print_exc()
+                else:
+                    os.remove(_dest)
+                finally:
+                    self._pdf.rect(_x, _y, 72, 90, 'D')
 
                 self._pdf.multi_cell(72 * (self.__DUAL_COLUMN_WIDTH_IN - 1), self.__LINE_HEIGHT_PTS, _filled_extended, 0, 'L')
                 self._pdf.set_font('')
@@ -144,10 +177,14 @@ class PDFHelpers:
 
                 _first_part = _wrapped_synopsis[:(10 - len(_wrapped_extended))]
                 self._pdf.multi_cell(72 * (self.__DUAL_COLUMN_WIDTH_IN - 1), self.__LINE_HEIGHT_PTS, '\n'.join(_first_part), 0, 'L')
-                _filled_synopsis = _wrapped_synopsis[((10 - len(_wrapped_extended)) - len(_wrapped_synopsis)):]
+                _filled_synopsis = _wrapped_synopsis[(10 - len(_wrapped_extended)):]
                 
                 self.__wrapper.width = self.__COLUMN_WIDTH_CHARS
                 _filled_synopsis = self.__wrapper.wrap(' '.join(_filled_synopsis))
+            
+                if len(_filled_synopsis) == 0:
+                    _filled_synopsis = [' ' for i in range(9 - (len(_wrapped_extended) + len(_first_part)))]
+            
                 _filled_synopsis = '\n'.join(_filled_synopsis)
 
             self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
@@ -172,7 +209,9 @@ class PDFHelpers:
         while self._pdf.page_no() % 4 > 0:
             self._pdf.add_page()
 
-        self._pdf.output('sample_fpdf.pdf', 'F')
+        _prefix = self._config['AWS.S3']['prefix']
+
+        self._pdf.output(f'{_prefix}.pdf', 'F')
 
     def __write_index(self):
 

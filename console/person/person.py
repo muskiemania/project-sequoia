@@ -18,6 +18,10 @@ class Person:
         return self
 
     @property
+    def id(self):
+        return self._data.get('_id')
+
+    @property
     def inline_citations(self):
         return ''
 
@@ -75,7 +79,8 @@ class Person:
     @property
     def images(self):
         _images = images.Images(self).init()
-        return _images.all()
+
+        return _images.all(self.id)
 
     @property
     def summary(self):
