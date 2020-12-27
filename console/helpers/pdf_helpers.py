@@ -357,31 +357,31 @@ class PDFHelpers:
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art(f' ', font='mini'), 0, 'C')
  
         _tree = """
-        MMMMMMMMMMMMMNOdxk0WMMMMMMMMMMMMMM
-        MMMMMMMMMMMWKdlllloxKWMMMMMMMMMMMM
-        MMMMMMMMMMNkollllllloONMMMMMMMMMMM
-        MMMMMMMMWKxolllllllllld0WMMMMMMMMM
-        MMMMMMMW0dooooolooooooookXMMMMMMMM
-        MMMMMMNOoooooooooooooooooxXMMMMMMM
-        MMMMMMWKOOxolooooooooodO0XWMMMMMMM
-        MMMMMMMMWKdlllllllooood0WMMMMMMMMM
-        MMMMMMMNOololllllllllllokXMMMMMMMM
-        MMMMMMXxolllollllllllloood0NMMMMMM
-        MMMMMKdllllllllllllllloolloONMMMMM
-        MMMMMX0Okolllllllllllllld0XNWMMMMM
-        MMMMMMMNkollllllllllllllokXMMMMMMM
-        MMMMMWKxooooooooooooooooold0NMMMMM
-        MMMMNOdoooooooooooooooooooooxKWMMM
-        MMMNkdoooooooooooooooooooooooxXMMM
-        MMMNOkkxxxxxddddooddxxkkkOO00XWMMM
-        MMMMMWWWWNNNNNKxooxKNWWWMMMMMMMMMM
-        MMMMMMMMMMMMMMKdoodKMMMMMMMMMMMMMM
-        MMMMMMMMMMMMMMXkxxkKMMMMMMMMMMMMMM
+        MMMMMMMMMMNOdxk0WMMMMMMMMMMM
+        MMMMMMMMWKdlllloxKWMMMMMMMMM
+        MMMMMMMNkollllllloONMMMMMMMM
+        MMMMMWKxolllllllllld0WMMMMMM
+        MMMMW0dooooolooooooookXMMMMM
+        MMMNOoooooooooooooooooxXMMMM
+        MMMWKOOxolooooooooodO0XWMMMM
+        MMMMMWKdlllllllooood0WMMMMMM
+        MMMMNOololllllllllllokXMMMMM
+        MMMXxolllollllllllloood0NMMM
+        MMKdllllllllllllllloolloONMM
+        MMX0Okolllllllllllllld0XNWMM
+        MMMMNkollllllllllllllokXMMMM
+        MMWKxooooooooooooooooold0NMM
+        MNOdoooooooooooooooooooooxKW
+        NkdoooooooooooooooooooooooxX
+        NOkkxxxxxddddooddxxkkkOO00XW
+        MMWWWWNNNNNKxooxKNWWWMMMMMMM
+        MMMMMMMMMMMKdoodKMMMMMMMMMMM
+        MMMMMMMMMMMXkxxkKMMMMMMMMMMM
         """
-        _two_trees = _tree.split('\n')
-        _two_trees = [t.strip().replace('M', ' ') for t in _two_trees]
-        _two_trees = '\n'.join([t + '     ' + t for t in _two_trees])
+        _three_trees = _tree.split('\n')
+        _three_trees = [t.strip().replace('M', ' ') for t in _three_trees]
+        _three_trees = '\n'.join([t + '     ' + t + '     ' + t for t in _three_trees])
         self._pdf.set_xy(72, self._pdf.get_y())
-        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, _two_trees, 0,'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, _three_trees, 0,'C')
 
 
