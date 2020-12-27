@@ -216,6 +216,7 @@ if __name__ == '__main__':
         action='store',
         nargs='?',
         type=str,
+        default='{id}_{ver}.png',
         required=False,
         help='sets image source'
     )
@@ -309,7 +310,7 @@ if __name__ == '__main__':
     if _args.PDF:
         _toc = _bible.get_toc()
         if _toc:
-            _pdf = pdf_helpers.PDFHelpers().init()
+            _pdf = pdf_helpers.PDFHelpers().init(_config)
         while _toc:
             _chapter = _toc.pop(0)
             _pages = _bible.get_chapter(_chapter)
