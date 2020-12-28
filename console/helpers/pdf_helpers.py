@@ -147,20 +147,20 @@ class PDFHelpers:
                 _y = self._pdf.get_y()
                 
                 try:
-                    _url = self._image_helpers.get_presigned_url(person.images[0])
+                    _url = self._image_helpers.get_presigned_url(person.images[0].src)
                     _r = requests.get(_url, stream=True)
 
                     if _r.status_code != 200:
                         raise Exception('not 200 from aws')
 
-                    _dest = 'tmp/' + person.images[0]
+                    _dest = 'tmp/' + person.images[0].src
 
                     with open(_dest, 'wb') as f:
                         shutil.copyfileobj(_r.raw, f)
 
                     self._pdf.image(_dest, _x, _y, 72, 90, type='png')
                     self._pdf.set_xy(_x + 72, _y)
-                    self._pdf.multi_cell(18, self.__LINE_HEIGHT_PTS, '2\n0\n2\n0')
+                    self._pdf.multi_cell(18, self.__LINE_HEIGHT_PTS, '\n'.join(list(person.images[0].on)[:7]))
                 except:
                     traceback.print_exc()
                 else:

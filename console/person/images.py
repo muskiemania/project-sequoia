@@ -19,7 +19,8 @@ class Images:
         if self._data is None:
             self._data = {}
 
-        self._data[args.img.upper()] = args.src or self._data.get(args.img.upper())
+        self._data[args.img.upper()]['src'] = args.src or self._data[args.img.upper()]['src']
+        self._data[args.img.upper()]['on'] = args.on or 'unknown'
 
         return self._data
 
@@ -31,8 +32,20 @@ class Images:
         return self
 
     def all(self, _id):
-        
-        return [self.P1.format(id=_id, ver='P1')] if self.P1 else []
+        Image = type('Image', (object,), {
+            'src': '',
+            'on': ''
+        })
+
+        _images = []
+
+        if self.P1:
+            p1 = Image()
+            p1.src = self.P1.get('src').format(id=_id, ver='P1')
+            p1.on = self.P1.get('on')
+            _images.append(p1)
+
+        return _images
     
     @property
     def P1(self):
