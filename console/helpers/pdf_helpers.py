@@ -26,7 +26,7 @@ class PDFHelpers:
         self.__index_start = 0
 
         self.__COLUMN_WIDTH_CHARS = 43
-        self.__COLUMN_WIDTH_CHARS_IMAGE = 28
+        self.__COLUMN_WIDTH_CHARS_IMAGE = 27
         self.__LINE_HEIGHT_PTS = 10.0
         self.__SINGLE_COLUMN_WIDTH_IN = 6.5
         self.__DUAL_COLUMN_WIDTH_IN = 3.0
@@ -159,6 +159,8 @@ class PDFHelpers:
                         shutil.copyfileobj(_r.raw, f)
 
                     self._pdf.image(_dest, _x, _y, 72, 90, type='png')
+                    self._pdf.set_xy(_x + 72, _y)
+                    self._pdf.multi_cell(18, self.__LINE_HEIGHT_PTS, '2\n0\n2\n0')
                 except:
                     traceback.print_exc()
                 else:
@@ -166,6 +168,7 @@ class PDFHelpers:
                 finally:
                     self._pdf.rect(_x, _y, 72, 90, 'D')
 
+                self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, _y)
                 self._pdf.multi_cell(72 * (self.__DUAL_COLUMN_WIDTH_IN - 1), self.__LINE_HEIGHT_PTS, _filled_extended, 0, 'L')
                 self._pdf.set_font('')
                 self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
