@@ -8,7 +8,6 @@ import shutil
 import art
 import fpdf
 import requests
-import textwrap
 import justifytext
 import roman
 
@@ -44,8 +43,6 @@ class PDFHelpers:
     def init(self, _config):
         self._pdf.set_auto_page_break(False)
         self._pdf.set_font(self.__DEFAULT_FONT, '', 8.0)
-        self.__wrapper = textwrap.TextWrapper()
-        self.__wrapper.width = self.__COLUMN_WIDTH_CHARS
         
         self.__write_title_page()
 
