@@ -217,29 +217,29 @@ class Marriages:
                 _children = sorted(_children, key=lambda x: (_birth_year(x), _is_male(x)))
 
                 if _spouse_id != 'none':
-                    _output += '. '
+                    _output += '.'
 
                 if len(_children) == 1:
-                    _output += f'CHILDREN: {_children[0]}'
+                    _output += f' CHILDREN: {_children[0]}.'
                 if len(_children) == 2:
-                    _output += f'CHILDREN: ' + ' and '.join(_children)
+                    _output += f' CHILDREN: ' + ' and '.join(_children) + '.'
                 if len(_children) > 2:
-                    _output += f'CHILDREN: ' + ', '.join(_children[:-1])
-                    _output += ' and ' + _children[-1]
+                    _output += f' CHILDREN: ' + ', '.join(_children[:-1])
+                    _output += ' and ' + _children[-1] + '.'
 
             if 'divorced' in self._data[_key]:
                 try:
                     __divorce = datetime.datetime.fromisoformat(self._data[_key]['divorced'])
-                    _output += '. DIVORCED on ' + __divorce.strftime('%b. %d, %Y')
+                    _output += ' DIVORCED on ' + __divorce.strftime('%b. %d, %Y') + '.'
                 except:
-                    _output += '. DIVORCED'
+                    _output += ' DIVORCED.'
 
             if 'widowed' in self._data[_key]:
                 try:
                     __widowed = datetime.datetime.fromisoformat(self._data[_key]['widowed'])
-                    _output += '. WIDOWED on ' + __widowed.strftime('%b. %d, %Y')
+                    _output += ' WIDOWED on ' + __widowed.strftime('%b. %d, %Y') + '.'
                 except:
-                    _output += '. WIDOWED'
+                    _output += ' WIDOWED.'
 
             _marriages.append(_output)
 

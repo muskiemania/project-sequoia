@@ -9,6 +9,7 @@ import art
 import fpdf
 import requests
 import textwrap
+import justifytext
 import roman
 
 from . import image_helpers
@@ -92,8 +93,8 @@ class PDFHelpers:
             self.__wrapper.width = self.__COLUMN_WIDTH_CHARS
             _wrapped_extended = self.__wrapper.wrap(person.extended)
             _filled_extended = self.__wrapper.fill(person.extended)
-            _wrapped_synopsis = self.__wrapper.wrap(_synopsis)
-            _filled_synopsis = self.__wrapper.fill(_synopsis)
+            _wrapped_synopsis = justifytext.justify(_synopsis, self.__COLUMN_WIDTH_CHARS)
+            _filled_synopsis = '\n'.join(_wrapped_synopsis)
 
             _lines_chapter_title = len(_chapter_title.split('\r\n')) if _begin_chapter else 0
             _lines_for_person = len(_wrapped_extended) + len(_wrapped_synopsis)
@@ -103,7 +104,7 @@ class PDFHelpers:
             if len(person.images) == 1:
                 self.__wrapper.width = self.__COLUMN_WIDTH_CHARS_IMAGE
                 _wrapped_extended = self.__wrapper.wrap(person.extended)
-                _wrapped_synopsis = self.__wrapper.wrap(_synopsis)
+                _wrapped_synopsis = justifytext.justify(_synopsis, self.__COLUMN_WIDTH_CHARS_IMAGE)
      
                 if len(_wrapped_extended) + len(_wrapped_synopsis) < 10:
                     _lines_for_person = 9
@@ -111,7 +112,7 @@ class PDFHelpers:
                     _second_part = _wrapped_synopsis[(10 - len(_wrapped_extended)):]
                     _second_part = ' '.join(_second_part)
                     self.__wrapper.width = self.__COLUMN_WIDTH_CHARS_IMAGE
-                    _wrapped_part = self.__wrapper.wrap(_second_part)
+                    _wrapped_part = justifytext.justify(_second_part, self.__COLUMN_WIDTH_CHARS_IMAGE)
                     _lines_for_person = 10 + len(_wrapped_part)
 
             if self._pdf.get_y() > ((72 * self.__LINE_HEIGHT_PTS) - (self.__LINE_HEIGHT_PTS * (1 + _lines_chapter_title + 1 + _lines_for_person))):
@@ -180,8 +181,8 @@ class PDFHelpers:
                 _filled_synopsis = _wrapped_synopsis[(10 - len(_wrapped_extended)):]
                 
                 self.__wrapper.width = self.__COLUMN_WIDTH_CHARS
-                _filled_synopsis = self.__wrapper.wrap(' '.join(_filled_synopsis))
-            
+                _filled_synopsis = justifytext.justify(' '.join(_filled_synopsis), self.__COLUMN_WIDTH_CHARS)
+
                 if len(_filled_synopsis) == 0:
                     _filled_synopsis = [' ' for i in range(9 - (len(_wrapped_extended) + len(_first_part)))]
             
