@@ -90,9 +90,8 @@ class PDFHelpers:
             # must check size before writing...
             _chapter_title = art.text2art(chapter, 'ogre')
 
-            self.__wrapper.width = self.__COLUMN_WIDTH_CHARS
-            _wrapped_extended = self.__wrapper.wrap(person.extended)
-            _filled_extended = self.__wrapper.fill(person.extended)
+            _wrapped_extended = justifytext.justify(person.extended, self.__COLUMN_WIDTH_CHARS)
+            _filled_extended = '\n'.join(_wrapped_extended)
             _wrapped_synopsis = justifytext.justify(_synopsis, self.__COLUMN_WIDTH_CHARS)
             _filled_synopsis = '\n'.join(_wrapped_synopsis)
 
@@ -102,8 +101,7 @@ class PDFHelpers:
             #if len(person.images) > 1:
             #    _lines_for_person += 10
             if len(person.images) == 1:
-                self.__wrapper.width = self.__COLUMN_WIDTH_CHARS_IMAGE
-                _wrapped_extended = self.__wrapper.wrap(person.extended)
+                _wrapped_extended = justifytext.justify(person.extended, self.__COLUMN_WIDTH_CHARS_IMAGE)
                 _wrapped_synopsis = justifytext.justify(_synopsis, self.__COLUMN_WIDTH_CHARS_IMAGE)
      
                 if len(_wrapped_extended) + len(_wrapped_synopsis) < 10:
@@ -111,7 +109,6 @@ class PDFHelpers:
                 else:
                     _second_part = _wrapped_synopsis[(10 - len(_wrapped_extended)):]
                     _second_part = ' '.join(_second_part)
-                    self.__wrapper.width = self.__COLUMN_WIDTH_CHARS_IMAGE
                     _wrapped_part = justifytext.justify(_second_part, self.__COLUMN_WIDTH_CHARS_IMAGE)
                     _lines_for_person = 10 + len(_wrapped_part)
 
@@ -179,8 +176,11 @@ class PDFHelpers:
                 _first_part = _wrapped_synopsis[:(10 - len(_wrapped_extended))]
                 self._pdf.multi_cell(72 * (self.__DUAL_COLUMN_WIDTH_IN - 1), self.__LINE_HEIGHT_PTS, '\n'.join(_first_part), 0, 'L')
                 _filled_synopsis = _wrapped_synopsis[(10 - len(_wrapped_extended)):]
-                
-                self.__wrapper.width = self.__COLUMN_WIDTH_CHARS
+               
+                # must unjustify these lines then re-wrap them
+                for i, each in enumerate(_filled_synopsis):
+                    _filled_synopsis[i] = ' '.join(each.split())
+
                 _filled_synopsis = justifytext.justify(' '.join(_filled_synopsis), self.__COLUMN_WIDTH_CHARS)
 
                 if len(_filled_synopsis) == 0:
