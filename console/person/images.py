@@ -19,6 +19,9 @@ class Images:
         if self._data is None:
             self._data = {}
 
+        if args.img.upper() not in self._data:
+            self._data[args.img.upper()] = {}
+
         self._data[args.img.upper()]['src'] = args.src or self._data[args.img.upper()]['src']
         self._data[args.img.upper()]['on'] = args.on or 'unknown'
 
