@@ -151,7 +151,8 @@ class PDFHelpers:
                     _r = requests.get(_url, stream=True)
 
                     if _r.status_code != 200:
-                        raise Exception('not 200 from aws')
+                        print(f'presigned url: {_url}')
+                        raise Exception('not 200 from aws - ' + str(_r.content))
 
                     _dest = 'tmp/' + person.images[0].src
 

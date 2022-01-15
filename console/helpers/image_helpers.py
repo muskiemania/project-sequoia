@@ -1,4 +1,5 @@
 import boto3
+from botocore.client import Config
 from botocore.exceptions import ClientError
 
 class ImageHelpers:
@@ -22,10 +23,13 @@ class ImageHelpers:
         _prefix = self._config['AWS.S3']['prefix']
 
         # first write index
-        s3 = boto3.Session(profile_name=_profile).client('s3')
+        s3 = boto3.Session(profile_name=_profile).client('s3', config=Config(signature_version='s3v4'))
         
         try:
             return s3.generate_presigned_url('get_object', Params={'Bucket': _bucket, 'Key': f'{_prefix}/images/{_path}'}, ExpiresIn=300)
         except ClientError as e:
+            print(f'bucket: {_bucket}')
+            print(f'key: {_prefix}/images/{_path}')
+
             traceback.print_exc()
             return None
