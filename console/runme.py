@@ -294,7 +294,7 @@ if __name__ == '__main__':
             _death = died.Died(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'died', _death)
         if _args.buried:
-            _death = buried.Buried(_person).load(_args)
+            _buried = buried.Buried(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'buried', _buried)
         if _args.img and _args.src:
             _images = images.Images(_person).load(_args)
