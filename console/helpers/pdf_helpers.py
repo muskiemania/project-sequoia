@@ -92,7 +92,7 @@ class PDFHelpers:
             _wrapped_synopsis = justifytext.justify(_synopsis, self.__COLUMN_WIDTH_CHARS)
             _filled_synopsis = '\n'.join(_wrapped_synopsis)
 
-            _lines_chapter_title = len(_chapter_title.split('\r\n')) if _begin_chapter else 0
+            _lines_chapter_title = len(_chapter_title.split('\n')) if _begin_chapter else 0
             _lines_for_person = len(_wrapped_extended) + len(_wrapped_synopsis)
 
             #if len(person.images) > 1:
