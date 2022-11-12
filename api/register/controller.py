@@ -10,15 +10,16 @@ class RegistrationController:
 
     def register(self, event):
 
-        self.validation.validate(event)
+        if not self.validation.validate(event):
+            return False
 
         logging.info('event validated OK')
 
         name = ''
         password = ''
 
-        self.service.register(name, password)
-
-        logging.info(f'{name} registration OK')
-
-        return True
+        if self.service.register(name, password):
+            logging.info(f'{name} registration OK')
+            return True
+        
+        return False
