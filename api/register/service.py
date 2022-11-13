@@ -1,7 +1,7 @@
 import logging
 from .s3_repository import S3Repository
 from .ssm_repository import SSMRepository
-from helpers import env
+from helpers.env import EnvConfig
 from OpenSSL import crypto
 import base64
 
@@ -10,7 +10,8 @@ class RegistrationService:
     def __init__(self):
         self.ssm = SSMRepository()
         self.s3 = S3Repository()
-    
+        self.env = EnvConfig()
+
     def register(self, name, password):
 
         # create public and private keys
@@ -18,7 +19,7 @@ class RegistrationService:
         logging.info('keys created')
 
         # store in SSM
-        self.ssm.write(f'sequoia/{env.name}/{name}/keys', {'public': pub, 'private': pvt, 'password': password})
+        self.ssm.write(f'sequoia/{self.env.name}/{name}/keys', {'public': pub, 'private': pvt, 'password': password})
         logging.info('keys stored')
 
         # create default file
@@ -29,7 +30,7 @@ class RegistrationService:
             'fingerprint': 'encrypted name',
             'body': {}
         }
-        self.s3.save(f'project-sequoia', f'{env.name}/data', f'{name}.json', _file)
+        self.s3.save(f'project-sequoia', f'{self.env.name}/data', f'{name}.json', _file)
         logging.info('file written')
 
         return True

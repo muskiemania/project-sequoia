@@ -34,7 +34,6 @@ def test_register_service_ok(mock_register, mock_validate):
     mock_validate.assert_called_once_with(event)
     mock_register.assert_called_once_with('', '')
 
-
 @patch('register.validation_service.ValidationService.validate')
 @patch('register.service.RegistrationService.register')
 def test_register_service_error(mock_register, mock_validate):
