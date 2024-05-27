@@ -36,6 +36,61 @@ class LocationHelpers:
 
         return self
 
+    def specials(self):
+
+        _output = []
+
+        if self.venue:
+            _output.append(f'at {self.venue}')
+
+        if self.city and not self.state and not self.country:
+            _output.append(f'in {self.city}')
+
+        if self.city and self.state and not self.country:
+            # for city + state will do city, sta.
+            try:
+                _state = us.states.lookup(self.state).ap_abbr
+            except:
+                _state = self.state
+            _output.append(f'in {self.city}, {_state}')
+
+        if self.city and self.state and self.country:
+            # for city + state + country will do city, sta. (country)
+            try:
+                _state = us.states.lookup(self.state).ap_abbr
+            except:
+                _state = self.state
+            _output.append(f'in {self.city}, {_state} ({self.country})')
+
+        if self.city and not self.state and self.country:
+            # for city + country will do city, cty
+            _output.append(f'in {self.city}, {self.country}')
+
+        if not self.city and self.state and not self.country:
+            # for state only, will do sta.
+            try:
+                _state = us.states.lookup(self.state).ap_abbr
+            except:
+                _state = self.state
+            _output.append(f'in {_state}')
+
+        if not self.city and self.state and self.country:
+            # for state country, will do sta., CTY
+            try:
+                _state = us.states.lookup(self.state).ap_abbr
+            except:
+                _state = self.state
+            _output.append(f'in {_state}, {self.country}')
+
+        if not self.city and not self.state and self.country:
+            _output.append(f'in {self.country}')
+
+        #print(_output)
+        if _output:
+            return '  ' + '\n  '.join([f'    {o}' for o in _output])
+        else:
+            return ''
+        
     def __str__(self):
 
         # city      city, ST    city (CTY)  city, ST (CTY)

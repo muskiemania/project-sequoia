@@ -1,7 +1,7 @@
 import uuid
 import datetime
 
-from person import basic, born, marriages, died, buried, images
+from person import basic, born, marriages, died, buried, images, specials
 
 class Person:
 
@@ -97,6 +97,12 @@ class Person:
         
         return _summary
     
+    @property
+    def appendix_a(self):
+        _specials = specials.Specials(self).init()
+
+        return _specials
+
     def __str__(self):
 
         _born = born.Born(self).init()

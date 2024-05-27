@@ -19,6 +19,7 @@ class PDFHelpers:
         self._pdf = fpdf.FPDF(format='Letter', unit='pt')
         self.__this_page = []
         self.__index = []
+        self.__appendix_a = []
         self.__column_number = None
         self.__wrapper = None
         self.__first_chapter = False
@@ -193,8 +194,14 @@ class PDFHelpers:
             self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _filled_synopsis, 0, 'L')
             
             self.__this_page.append(person.summary.split(',')[0])
+            print(person.summary)
             print(_filled_synopsis + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
             self.__index.append((person.summary, self.__page_number()))
+
+            # generate appendix content
+            #print(f'AX1 - {person.appendix_a}')
+            self.__appendix_a.append((person.summary, person.appendix_a))
+
             _begin_chapter = False
 
     def complete(self):
@@ -207,13 +214,14 @@ class PDFHelpers:
             self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- Page {self.__page_number()} --', 0, 'C')
  
         self.__write_index()
+        self.__write_appendix_a()
 
         while self._pdf.page_no() % 4 > 0:
             self._pdf.add_page()
 
         _prefix = self._config['AWS.S3']['prefix']
 
-        self._pdf.output(f'{_prefix}.pdf', 'F')
+        self._pdf.output(f'{_prefix}_1.pdf', 'F')
 
     def __write_index(self):
 
@@ -334,7 +342,125 @@ class PDFHelpers:
 
         self._pdf.set_xy(72, (10 * 72) + 20)
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+
+    def __write_appendix_a(self): # special occasions
+
+        self._pdf.add_page()
+        self.__appendix_a_start = self._pdf.page_no()
+        #self._pdf.add_page()
+
+        self._pdf.set_xy(72, 72)
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('appendix a', font='ogre'))
+        self._pdf.set_font('')
+
+        self._pdf.set_xy(72, self._pdf.get_y())
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, '\n[CHRONOLOGY OF SPECIAL EVENTS]')
+        self._pdf.set_font('')
+
+
+
+
+        _column_number = 1
+        _current_letter = ''
+
+        def _first_page_of_appendix_a(self):
+            return self._pdf.page_no() == self.__appendix_a_start
+
+        for (_summary, events) in self.__appendix_a:
+            print(f'{_summary}')
+
+            if not str(events):
+                print(f'  - no events')
+                continue
+            
+
+            if _summary[0].upper() != _current_letter:
+                _current_letter = _summary[0].upper()
+
+                # check if room for 1 + subheader + 1 + len(events)
+                _height = len(str(events).split('\n'))
+                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1 + 1 + _height))):
+                    print('new section overflows')
+                
+                    if _column_number == 1:
+                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_a(self) else 0) * 10))
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_a else 0))]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_a(self) else 0) * 10))
+                        _column_number = 2
+                        print('***** SECOND COL *****')
+
+                    elif _column_number == 2:
+                        self._pdf.set_xy(72, (10 * 72) + 20)
+                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                    
+                        self._pdf.add_page()
+                        self._pdf.set_xy(72, 72)
+                        _column_number = 1
+                        print('***** NEW   PAGE *****')
+                        print('***** FIRST  COL *****')
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'[{_current_letter.upper()}]')
+                self._pdf.set_font('')
+
+                print(_current_letter + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
+                self._pdf.set_font('')
+                print(_summary)
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+               
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, str(events))
+                print(str(events) + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+
+
+            elif _summary[0].upper() == _current_letter:
+                # check if room for name
+                if self._pdf.get_y() > ((72 * 10) - 10):
+                    print('name overflows')
+                
+                    if _column_number == 1:
+                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
+                        _column_number = 2
+                        print('***** SECOND COL *****')
+
+                    elif _column_number == 2:
+                        self._pdf.set_xy(72, (10 * 72) + 20)
+                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                    
+                        self._pdf.add_page()
+                        self._pdf.set_xy(72, 72)
+                        _column_number = 1
+                        print('***** NEW   PAGE *****')
+                        print('***** FIRST  COL *****')
+
+
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
+                self._pdf.set_font('')
+                print(_summary)
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+               
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, str(events))
+                print(str(events) + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+
+        self._pdf.set_xy(72, (10 * 72) + 20)
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
  
+
     def __write_title_page(self, prepared_for='muskiemania'):
         self._pdf.add_page()
 
