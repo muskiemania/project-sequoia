@@ -11,6 +11,8 @@ class Died:
             self.__person = person
             self._data = dict(person).get('died')
             self.year = None
+            self.month = None
+            self.day = None
 
             self.__location_helpers = None
         except:
@@ -59,6 +61,8 @@ class Died:
                     self.__died = datetime.datetime(int(_died), 1, 1)
 
                 self.year = self.__died.year
+                self.month = self.__died.month
+                self.day = self.__died.day
 
             self.__location_helpers = location_helpers.LocationHelpers(self._data)
 

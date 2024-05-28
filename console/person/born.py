@@ -11,6 +11,8 @@ class Born:
             self.__person = person
             self._data = dict(person).get('born')
             self.year = None
+            self.month = None
+            self.day = None
             self.__sex = dict(person).get('basic').get('sex')
 
             self.__location_helpers = None
@@ -67,6 +69,8 @@ class Born:
                     self.__born = datetime.datetime(int(_born), 1, 1)
 
                 self.year = self.__born.year
+                self.month = self.__born.month
+                self.day = self.__born.day
 
             self.__location_helpers = location_helpers.LocationHelpers(self._data)
 

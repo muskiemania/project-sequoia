@@ -1,5 +1,6 @@
 import uuid
 import datetime
+import dateutil
 
 from person import basic, born, marriages, died, buried, images, specials
 
@@ -102,6 +103,23 @@ class Person:
         _specials = specials.Specials(self).init()
 
         return _specials
+
+    @property
+    def appendix_b(self):
+        _born = born.Born(self).init()
+        _dead = died.Died(self).init()
+
+        _born_date = datetime.datetime(_born.year, _born.month, _born.day)
+        if not _dead:
+            return ''
+
+        print(_dead)
+        _died_date = datetime.datetime(_dead.year, _dead.month, _dead.day)
+
+        _diff = dateutil.relativedelta.relativedelta(_died_date, _born_date)
+
+        return f'{_diff.years}yr {_diff.months}mo {_diff.days}dy'
+
 
     def __str__(self):
 
