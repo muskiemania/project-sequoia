@@ -221,7 +221,7 @@ class PDFHelpers:
 
         _prefix = self._config['AWS.S3']['prefix']
 
-        self._pdf.output(f'{_prefix}_1.pdf', 'F')
+        self._pdf.output(f'{_prefix}.pdf', 'F')
 
     def __write_index(self):
 
