@@ -87,7 +87,7 @@ class LocationHelpers:
 
         #print(_output)
         if _output:
-            return '  ' + '\n  '.join([f'    {o}' for o in _output])
+            return '  ' + '\n  '.join([f'  {o}' for o in _output])
         else:
             return ''
         

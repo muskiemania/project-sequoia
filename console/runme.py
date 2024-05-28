@@ -5,7 +5,7 @@ import string
 from itertools import chain
 
 from bible import bible, serializer_factory, s3_serializer, local_serializer
-from person import person, basic, born, marriages, died, buried, images
+from person import person, basic, born, marriages, died, buried, images, specials
 from helpers import config_helpers, pdf_helpers
 
 from tabulate import tabulate
@@ -104,6 +104,15 @@ if __name__ == '__main__':
         required=False,
         help='sets date for event'
     )
+
+    _parser.add_argument('-school', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets school for graduation event'
+    )
+
     _parser.add_argument('-venue', 
         action='store',
         nargs='?',
@@ -147,22 +156,37 @@ if __name__ == '__main__':
         help='adds/edits marriages for person'
     )
 
+    _parser.add_argument('-specials',
+        action='store_true',
+        required=False,
+        help='adds/edits special events for a person'
+    )
+
     _parser.add_argument('-a', 
         action='store_true', 
         required=False,
-        help='add marriage for person'
+        help='add marriage/event for person'
     )
 
     _parser.add_argument('-e', 
         action='store_true', 
         required=False,
-        help='edits marriage for person'
+        help='edits marriage/event for person'
     )
 
     _parser.add_argument('-r', 
         action='store_true', 
         required=False,
-        help='removes marriage for person'
+        help='removes marriage/event for person'
+    )
+
+    _parser.add_argument('-name',
+        action='store',
+        nargs='?',
+        type=str,
+        choices=['BAPTISM', 'FIRST EUCHARIST', 'CONFIRMATION', 'GRADUATION'],
+        required=False,
+        help='sets name for special event'
     )
 
     _parser.add_argument('-spouse', 
@@ -172,12 +196,38 @@ if __name__ == '__main__':
         required=False,
         help='sets spouse for marriage'
     )
+    
+    _parser.add_argument('-by', 
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets officiant for special event'
+    )
+
+    _parser.add_argument('-godparent', 
+        action='store',
+        nargs='+',
+        type=str,
+        required=False,
+        help='sets adds godparent for baptism'
+    )
+
+    _parser.add_argument('-degree', 
+        action='store',
+        nargs='+',
+        type=str,
+        required=False,
+        help='sets adds degree for graduation'
+    )
+ 
+
     _parser.add_argument('-num', 
         action='store',
         nargs='?',
         type=str,
         required=False,
-        help='sets marriage number for lookup validation'
+        help='sets marriage/event number for lookup validation'
     )
 
     _parser.add_argument('-children', 
@@ -296,10 +346,13 @@ if __name__ == '__main__':
         if _args.buried:
             _buried = buried.Buried(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'buried', _buried)
+        if _args.specials:
+            _specials = specials.Specials(_person).load(_args)
+            _bible.set(_args.E.lower(), _id, 'specials', _specials)
         if _args.img and _args.src:
             _images = images.Images(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'images', _images)
-        
+
 
     if _args.O:
         for _each in sorted(set(_args.O)):

@@ -424,13 +424,15 @@ class PDFHelpers:
 
             elif _summary[0].upper() == _current_letter:
                 # check if room for name
-                if self._pdf.get_y() > ((72 * 10) - 10):
+
+                _height = len(str(events).split('\n'))
+                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + _height))):
                     print('name overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
-                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
-                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
+                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_a(self) else 0) * 10))
+                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_a(self) else 0))]), 0, 'C')
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((7 if _first_page_of_appendix_a(self) else 0) * 10))
                         _column_number = 2
                         print('***** SECOND COL *****')
 

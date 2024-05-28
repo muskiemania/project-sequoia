@@ -66,45 +66,45 @@ class Specials:
 
     def _add_special(self, args):
         _ix = 9999
-        #_marriage = {
-        #    _ix: {}
-        #}
+        _special = {
+            _ix: {}
+        }
 
         if not args.name:
             raise ValueError('name is required for new special event')
 
-        _new_special = {}
-        _new_special['name'] = args.name
-        #_marriage[_ix]['spouse'] = args.spouse
+        _special[_ix]['name'] = args.name
 
         if args.on:
             try:
                 __special = datetime.datetime.fromisoformat(args.on)
-                _new_special['on'] = __special.isoformat('|').split('|')[0]
-                #_marriage[_ix]['on'] = __marriage.isoformat('|').split('|')[0]
+                _special[_ix]['on'] = __special.isoformat('|').split('|')[0]
             except:
                 raise
 
-        __location_helpers = location_helpers.LocationHelpers(_new_special.load(args))
-        #__location_helpers = location_helpers.LocationHelpers(_marriage[_ix]).load(args)
+        __location_helpers = location_helpers.LocationHelpers(_special[_ix]).load(args)
 
         if __location_helpers.venue:
-            _new_special['venue'] = __location_helpers.venue
+            _special[_ix]['venue'] = __location_helpers.venue
         if __location_helpers.city:
-            _new_special['city'] = __location_helpers.city
+            _special[_ix]['city'] = __location_helpers.city
         if __location_helpers.state:
-            _new_special['state'] = __location_helpers.state
+            _special[_ix]['state'] = __location_helpers.state
         if __location_helpers.country:
-            _new_special['country'] = __location_helpers.country
+            _special[_ix]['country'] = __location_helpers.country
 
         if args.by:
-            _new_special['by'] == args.by
+            _special[_ix]['by'] = args.by
 
-        if args.godparents:
-            _new_special['godparents'] = args.godparents
+        if args.godparent:
+            _special[_ix]['godparents'] = list(set(args.godparent.split(' ')))
+        if args.school:
+            _special[_ix]['school'] = args.school
 
-        self._data[_ix] = _new_special
-        #self._data[_ix] = _marriage[_ix]
+        if args.degree:
+            _special[_ix]['degree'] = args.degree
+
+        self._data[_ix] = _special[_ix]
 
         return True
 
@@ -125,8 +125,8 @@ class Specials:
 
         if args.on:
             try:
-                __marriage = datetime.datetime.fromisoformat(args.on)
-                self._data[args.num]['on'] = __marriage.isoformat('|').split('|')[0]
+                __special = datetime.datetime.fromisoformat(args.on)
+                self._data[args.num]['on'] = __special.isoformat('|').split('|')[0]
             except:
                 raise
         
@@ -140,6 +140,21 @@ class Specials:
             self._data[args.num]['state'] = __location_helpers.state
         if __location_helpers.country:
             self._data[args.num]['country'] = __location_helpers.country
+
+        if args.by:
+            self._data[args.num]['by'] = args.by
+
+        if args.godparents:
+            _gp = self._data[args.num].get('godparents', [])
+            _gp.extend(args.godparents.split(' '))
+
+            self._data[args.num]['godparents'] = list(set(_gp))
+
+        if args.school:
+            self._data[args.num]['school'] = args.school
+
+        if args.degree:
+            self._data[args.num]['degree'] = args.degree
 
         return True
 
@@ -181,7 +196,7 @@ class Specials:
             _output = ''
 
             _name = _event['name']
-            _output = f'    {_name.upper()}'
+            _output = f'  {_name.upper()}'
             
             if 'on' in _event:
                 __event = datetime.datetime.fromisoformat(_event['on'])
@@ -190,18 +205,27 @@ class Specials:
             else:
                 continue
 
+            if 'by' in _event:
+                _by = _event['by']
+                _output += '\n' + f'    by {_by}' if _by else ''
+
+            if 'spouse' in _event:
+                _spouse_id = _event['spouse']
+                _spouse_name = self.__person._index.get(_spouse_id, '')
+                _spouse_name = _spouse_name.split('(')[0]
+                _output += '\n' + f'    to {_spouse_name}' if _spouse_name else ''
+
+            if 'school' in _event:
+                _school = _event['school']
+                _output += '\n' + f'    from {_school}' if _school else ''
+
             __location_helpers = location_helpers.LocationHelpers(_event)
             if __location_helpers.specials():
                 _output += '\n' + __location_helpers.specials()
 
-            #if 'spouse' in _event:
-            #    _spouse_id = _event['spouse']
-            #    #print(_spouse_id)
-            #    try:
-            #        _spouse_name = self.__person._index[_spouse_id]
-            #        _output += '\n' + f'      Sp: {_spouse_name}'
-            #    except:
-            #       pass
+            if 'degree' in _event:
+                _degrees = _event['degree']
+                _output += ''.join(['\n' + f'    with {_degree}' for _degree in _degrees] if _degrees else [])
 
             _specials.append(_output)
 
