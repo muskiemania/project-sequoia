@@ -184,7 +184,7 @@ if __name__ == '__main__':
         action='store',
         nargs='?',
         type=str,
-        choices=['BAPTISM', 'FIRST EUCHARIST', 'CONFIRMATION', 'GRADUATION'],
+        choices=['BAPTISM', 'FIRST EUCHARIST', 'CONFIRMATION', 'GRADUATION', 'RETIREMENT'],
         required=False,
         help='sets name for special event'
     )
@@ -221,6 +221,13 @@ if __name__ == '__main__':
         help='sets adds degree for graduation'
     )
  
+    _parser.add_argument('-company', 
+        action='store',
+        nargs='+',
+        type=str,
+        required=False,
+        help='sets adds company for retirement'
+    )
 
     _parser.add_argument('-num', 
         action='store',
@@ -258,7 +265,7 @@ if __name__ == '__main__':
         action='store',
         nargs='?',
         type=str,
-        choices=['P0', 'P1', 'P2'],
+        choices=['P0', 'P1', 'P2', 'BAPTISM', 'FIRST EUCHARIST', 'CONFIRMATION', 'GRADUATION'],
         required=False,
         help='sets image parameters'
     )
@@ -266,7 +273,7 @@ if __name__ == '__main__':
         action='store',
         nargs='?',
         type=str,
-        default='{id}_{ver}.png',
+        const='{id}_{ver}.png',
         required=False,
         help='sets image source'
     )
@@ -287,6 +294,16 @@ if __name__ == '__main__':
         required=False,
         help='gets textualized output for a single page'
     )
+
+    _parser.add_argument('-A', 
+        action='store', 
+        type=str,
+        nargs='*',
+        choices=['a', 'b', 'c'],
+        required=False,
+        help='gets textualized output for a single appendix'
+    )
+ 
     _parser.add_argument('-PDF', 
         action='store_true', 
         required=False,
@@ -349,10 +366,10 @@ if __name__ == '__main__':
         if _args.specials:
             _specials = specials.Specials(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'specials', _specials)
-        if _args.img and _args.src:
+        if _args.img: # and _args.src:
             _images = images.Images(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'images', _images)
-
+            print(f' here - {_args.img} - {_args.src}')
 
     if _args.O:
         for _each in sorted(set(_args.O)):
@@ -361,15 +378,32 @@ if __name__ == '__main__':
             print('\n\n'.join(['\n'.join([person.extended, str(person)]) for person in _persons]))
 
     if _args.PDF:
+        _tree = _bible.get_descendants()
         _toc = _bible.get_toc()
+
         if _toc:
             _pdf = pdf_helpers.PDFHelpers().init(_config)
         while _toc:
             _chapter = _toc.pop(0)
             _pages = _bible.get_chapter(_chapter)
-            _pdf.write_chapter(_chapter, sorted([person.Person(v, _index).init() for (k, v) in _pages.items()], key=lambda x: x.sort_key))
+            _pdf.write_chapter(_chapter, sorted([(person.Person(v, _index).init(), _tree) for (k, v) in _pages.items()], key=lambda x: x[0].sort_key))
         
         _pdf.complete()
+
+    if _args.A:
+        _toc = _bible.get_toc()
+        _tree = _bible.get_descendants()
+        while _toc:
+            _chapter = _toc.pop(0)
+            _pages = _bible.get_chapter(_chapter)
+            _people = sorted([person.Person(v, _index).init() for (k, v) in _pages.items()], key=lambda x: x.sort_key)
+            print(list(_index.keys())[0:10])
+            print(_people[0].sort_key)
+            _people[0].tree = _tree
+            print(_people[0].appendix_c())
+            break
+
+
 
     if _args.T:
         _headers = ['given', 'm.i.', 'surname', 'suffix', 'd.o.b.', 'r.i.p.', 'sex', '_id']

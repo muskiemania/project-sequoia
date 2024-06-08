@@ -1,7 +1,7 @@
 import uuid
 import datetime
 import dateutil
-
+import re
 from person import basic, born, marriages, died, buried, images, specials
 
 class Person:
@@ -10,11 +10,25 @@ class Person:
         self._data = _data
         self._index = _index
         self.sort_key = None
-    
+        self.tree = None
+
     def init(self):
         _basic = basic.Basic(self).init()
         _born = born.Born(self).init()
         self.sort_key = f'{_basic.surname}, {_basic.given} {_basic.middle[0] if _basic.middle else ""} ({_born.year}'
+
+        _marriages = marriages.Marriages(self).init()
+        _children = []
+        for each in _marriages.data.values():
+            if 'children' in each:
+                _children.extend(each['children'])
+
+        # must sort all kids alphabetically and by gender
+        _birth_year = lambda x: int(re.search('\((\d{4})\-(\d{4})?\)$', x).group(1))
+        _gender = lambda x: '(m)' not in x
+        _children = [(_id, self._index[_id]) for _id in _children]
+        _children = sorted(_children, key=lambda x: (_birth_year(x[1]), _gender(x[1])))
+        self.children = [id for (id, child) in _children]
 
         return self
 
@@ -120,6 +134,34 @@ class Person:
 
         return f'{_diff.years}yr {_diff.months}mo {_diff.days}dy'
 
+    @property
+    def appendix_c(self):
+        _born = born.Born(self).init()
+        if _born.data.get('parents', []):
+            return []
+
+        _descendants = []
+        def _traverse(level, person_id):
+            #print(f'_t - level {level} + person_id {person_id}')
+ 
+            _kids = self.tree[person_id] if person_id in self.tree else []
+            #print(f'_k - {_kids}')
+
+            for _id in _kids:
+                _descendants.append((level + 1, _id))
+                _traverse(level + 1, _id)
+
+        _traverse(0, self.id)
+        #print(f'i: {self.id}')
+
+        #print(_descendants)
+
+        _descendants = [(ix, self._index[_id]) for (ix, _id) in _descendants]
+        return _descendants
+
+    @property
+    def data(self):
+        return self._data
 
     def __str__(self):
 

@@ -97,10 +97,13 @@ class Specials:
             _special[_ix]['by'] = args.by
 
         if args.godparent:
-            _special[_ix]['godparents'] = list(set(args.godparent.split(' ')))
+            _existing = list(set(_special[_ix]['godparents']))
+            _existing.extend(args.godparent.split(' '))
+            _special[_ix]['godparents'] = list(set(_existing))
         if args.school:
             _special[_ix]['school'] = args.school
-
+        if args.company:
+            _special[_ix]['company'] = args.company
         if args.degree:
             _special[_ix]['degree'] = args.degree
 
@@ -144,15 +147,16 @@ class Specials:
         if args.by:
             self._data[args.num]['by'] = args.by
 
-        if args.godparents:
+        if args.godparent:
             _gp = self._data[args.num].get('godparents', [])
-            _gp.extend(args.godparents.split(' '))
+            _gp.extend(args.godparent)
 
             self._data[args.num]['godparents'] = list(set(_gp))
 
         if args.school:
             self._data[args.num]['school'] = args.school
-
+        if args.company:
+            self._data[args.num]['company'] = args.company
         if args.degree:
             self._data[args.num]['degree'] = args.degree
 
@@ -218,6 +222,9 @@ class Specials:
             if 'school' in _event:
                 _school = _event['school']
                 _output += '\n' + f'    from {_school}' if _school else ''
+            if 'company' in _event:
+                _company = _event['company']
+                _output += ''.join(['\n' + f'    from {_co}' for _co in _company] if _company else [])
 
             __location_helpers = location_helpers.LocationHelpers(_event)
             if __location_helpers.specials():
@@ -226,6 +233,16 @@ class Specials:
             if 'degree' in _event:
                 _degrees = _event['degree']
                 _output += ''.join(['\n' + f'    with {_degree}' for _degree in _degrees] if _degrees else [])
+
+            if _name == 'BAPTISM' and 'godparents' in _event:
+                _gp = [self.__person._index[id] for id in _event['godparents']]
+                _birth_year = lambda x: int(re.search('\((\d{4})\-(\d{4})?\)$', x).group(1))
+                _is_male = lambda x: '(m)' not in x
+                _gp = sorted(_gp, key=lambda x: (_birth_year(x), _is_male(x)))
+                _gp = [gp.split('(')[0] for gp in _gp]
+                _output += '\n' + '    Godparents:' + '\n'
+                _output += '\n'.join([f'      {gp}' for gp in _gp])
+
 
             _specials.append(_output)
 

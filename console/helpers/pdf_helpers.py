@@ -21,6 +21,7 @@ class PDFHelpers:
         self.__index = []
         self.__appendix_a = []
         self.__appendix_b = []
+        self.__appendix_c = []
         self.__column_number = None
         self.__wrapper = None
         self.__first_chapter = False
@@ -75,7 +76,7 @@ class PDFHelpers:
         self._pdf.set_xy(72, (10 * 72) + 20)
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'-- Page {self.__page_number()} --', 0, 'C')
  
-    def write_chapter(self, chapter, people, _begin_chapter=True):
+    def write_chapter(self, chapter, people_tree, _begin_chapter=True):
 
         if self.__first_chapter:
             self._pdf.add_page()
@@ -83,7 +84,7 @@ class PDFHelpers:
             self.__column_number = 1
             self.__first_chapter = False
 
-        for person in people:
+        for (person, tree) in people_tree:
             _synopsis = str(person)
 
             # must check size before writing...
@@ -138,25 +139,27 @@ class PDFHelpers:
             
             self._pdf.set_xy(72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)    
             self._pdf.set_font(self.__DEFAULT_FONT, 'B')
- 
-            if (person.images and len(person.images) > 1) or not person.images:
+
+            _images = [i for i in person.images if i.ver in ['P0', 'P1', 'P2']]
+
+            if (_images and len(_images) > 1) or not _images:
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, _filled_extended, 0, 'L')
                 self._pdf.set_font('')
 
-            if person.images and len(person.images) == 1:
+            if _images and len(_images) == 1:
 
                 _x = (72 if self.__column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN) + (72 * (self.__DUAL_COLUMN_WIDTH_IN - 1))
                 _y = self._pdf.get_y()
                 
                 try:
-                    _url = self._image_helpers.get_presigned_url(person.images[0].src)
+                    _url = self._image_helpers.get_presigned_url(_images[0].src)
                     _r = requests.get(_url, stream=True)
 
                     if _r.status_code != 200:
                         print(f'presigned url: {_url}')
                         raise Exception('not 200 from aws - ' + str(_r.content))
 
-                    _dest = 'tmp/' + person.images[0].src
+                    _dest = 'tmp/' + _images[0].src
 
                     with open(_dest, 'wb') as f:
                         shutil.copyfileobj(_r.raw, f)
@@ -200,8 +203,12 @@ class PDFHelpers:
             self.__index.append((person.summary, self.__page_number()))
 
             # generate appendix content
-            self.__appendix_a.append((person.summary, person.appendix_a))
+            self.__appendix_a.append((person.summary, person.appendix_a, person.images))
             self.__appendix_b.append((person.summary, person.appendix_b))
+            
+            person.tree = tree
+            if person.appendix_c:
+                self.__appendix_c.append((person.summary, person.appendix_c))
 
             _begin_chapter = False
 
@@ -217,6 +224,7 @@ class PDFHelpers:
         self.__write_index()
         self.__write_appendix_a()
         self.__write_appendix_b()
+        self.__write_appendix_c()
 
         while self._pdf.page_no() % 4 > 0:
             self._pdf.add_page()
@@ -346,7 +354,7 @@ class PDFHelpers:
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
 
     def __write_appendix_a(self): # special occasions
-
+        self.__this_page = []
         self._pdf.add_page()
         self.__appendix_a_start = self._pdf.page_no()
 
@@ -360,28 +368,25 @@ class PDFHelpers:
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, '\n[CHRONOLOGY OF SPECIAL EVENTS]')
         self._pdf.set_font('')
 
-
-
-
         _column_number = 1
         _current_letter = ''
 
         def _first_page_of_appendix_a(self):
             return self._pdf.page_no() == self.__appendix_a_start
 
-        for (_summary, events) in self.__appendix_a:
+        for (_summary, events, images) in self.__appendix_a:
             print(f'{_summary}')
+
 
             if not str(events):
                 print(f'  - no events')
                 continue
             
-
             if _summary[0].upper() != _current_letter:
                 _current_letter = _summary[0].upper()
 
                 # check if room for 1 + subheader + 1 + len(events)
-                _height = len(str(events).split('\n'))
+                _height = len(str(events).split('\n')) + (11 if bool(images) else 0)
                 if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1 + 1 + _height))):
                     print('new section overflows')
                 
@@ -393,6 +398,8 @@ class PDFHelpers:
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
+                        self.__write_footer()
+                        self.__this_page = []
                         self._pdf.set_xy(72, (10 * 72) + 20)
                         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
@@ -420,13 +427,85 @@ class PDFHelpers:
                 self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, str(events))
+
+                images = sorted([i for i in images if i.ver not in ['P1']], key=lambda x: x.on)
+                if images:
+                    print(images)
+                    # set position for first image
+                    self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
+
+                    _x = (72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN)
+                    _y = self._pdf.get_y()
+
+                    _xy = {}
+                    _xy['0'] = (_x - 5, _y + 10)
+                    _xy['1'] = (_x + 72, _y + 10)
+                    _xy['2'] = (_x + 72 + 5 + 72, _y + 10)
+
+                    #  | --- 72 --- | --- 72 --- | --- 72 --- |
+                    #| --- 72 --- |5| --- 72 --- |5| --- 72 --- |
+
+                    #     /\      
+                    #    /\*\     
+                    #   /\O\*\    
+                    #  /*/\/\/\   
+                    # /\O\/\*\/\  
+                    #     ||      
+                    #     ||      
+                    #     ||      
+                    
+                    _ascii_tree = '' + '\n'
+                    _ascii_tree += '       /\\' + '\n'      
+                    _ascii_tree += '      /\\*\\' + '\n'     
+                    _ascii_tree += '     /\\O\\*\\' + '\n'    
+                    _ascii_tree += '    /*/\\/\\/\\' + '\n'   
+                    _ascii_tree += '   /\\O\\/\\*\\/\\' + '\n'
+                    _ascii_tree += '       ||' + '\n'
+                    _ascii_tree += '       ||'
+
+                    for i, img in enumerate(images):
+                        
+                        (x, y) = _xy[str(i)]
+
+                        try:
+                            _url = self._image_helpers.get_presigned_url(img.src)
+                            _r = requests.get(_url, stream=True)
+
+                            if _r.status_code != 200:
+                                print(f'presigned url: {_url}')
+                                raise Exception('not 200 from aws - ' + str(_r.content))
+
+                            _dest = 'tmp/' + img.src
+
+                            with open(_dest, 'wb') as f:
+                                shutil.copyfileobj(_r.raw, f)
+                            self._pdf.image(_dest, x, y, 72, 90, type='png')
+                            
+                            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                            self._pdf.set_xy(x, y - self.__LINE_HEIGHT_PTS)
+                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.short)
+                            self._pdf.set_xy(x, y + 90)
+                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.on[:10])
+                            self._pdf.set_font('')
+                        except:
+                            traceback.print_exc()
+                            self._pdf.set_xy(x - 5, y)
+                            self._pdf.multi_cell(72, 10.0, _ascii_tree)
+                        else:
+                            os.remove(_dest)
+
+                        finally:
+                            self._pdf.rect(x, y, 72, 90, 'D')
+
+                    self._pdf.set_xy(_x, _y + 72 + 40)
+
                 print(str(events) + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
 
             elif _summary[0].upper() == _current_letter:
                 # check if room for name
 
-                _height = len(str(events).split('\n'))
+                _height = len(str(events).split('\n')) + (11 if bool(images) else 0)
                 if self._pdf.get_y() > ((72 * 10) - (10 * (1 + _height))):
                     print('name overflows')
                 
@@ -438,6 +517,8 @@ class PDFHelpers:
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
+                        self.__write_footer()
+                        self.__this_page = []
                         self._pdf.set_xy(72, (10 * 72) + 20)
                         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
@@ -458,8 +539,81 @@ class PDFHelpers:
                 self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, str(events))
+
+                images = sorted([i for i in images if i.ver not in ['P1']], key=lambda x: x.on)
+                if images:
+                    print(images)
+                    # set position for first image
+                    self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
+
+                    _x = (72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN)
+                    _y = self._pdf.get_y()
+
+                    _xy = {}
+                    _xy['0'] = (_x - 5, _y + 10)
+                    _xy['1'] = (_x + 72, _y + 10)
+                    _xy['2'] = (_x + 72 + 5 + 72, _y + 10)
+
+                    #  | --- 72 --- | --- 72 --- | --- 72 --- |
+                    #| --- 72 --- |5| --- 72 --- |5| --- 72 --- |
+
+                    #     /\      
+                    #    /\*\     
+                    #   /\O\*\    
+                    #  /*/\/\/\   
+                    # /\O\/\*\/\  
+                    #     ||      
+                    #     ||      
+                    #     ||      
+                    
+                    _ascii_tree = '' + '\n'
+                    _ascii_tree += '       /\\' + '\n'      
+                    _ascii_tree += '      /\\*\\' + '\n'     
+                    _ascii_tree += '     /\\O\\*\\' + '\n'    
+                    _ascii_tree += '    /*/\\/\\/\\' + '\n'   
+                    _ascii_tree += '   /\\O\\/\\*\\/\\' + '\n'
+                    _ascii_tree += '       ||' + '\n'
+                    _ascii_tree += '       ||'
+
+                    for i, img in enumerate(images):
+                        
+                        (x, y) = _xy[str(i)]
+
+                        try:
+                            _url = self._image_helpers.get_presigned_url(img.src)
+                            _r = requests.get(_url, stream=True)
+
+                            if _r.status_code != 200:
+                                print(f'presigned url: {_url}')
+                                raise Exception('not 200 from aws - ' + str(_r.content))
+
+                            _dest = 'tmp/' + img.src
+
+                            with open(_dest, 'wb') as f:
+                                shutil.copyfileobj(_r.raw, f)
+                            self._pdf.image(_dest, x, y, 72, 90, type='png')
+
+                            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                            self._pdf.set_xy(x, y - self.__LINE_HEIGHT_PTS)
+                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.short)
+                            self._pdf.set_xy(x, y + 90)
+                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.on[:10])
+                            self._pdf.set_font('')
+                        except:
+                            traceback.print_exc()
+                            self._pdf.set_xy(x - 5, y)
+                            self._pdf.multi_cell(72, 10.0, _ascii_tree)
+                        else:
+                            os.remove(_dest)
+                        finally:
+                            self._pdf.rect(x, y, 72, 90, 'D')
+
+                    self._pdf.set_xy(_x, _y + 72 + 50)
+
+                self.__this_page.append(_summary.split(',')[0])
                 print(str(events) + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
+        self.__write_footer()
         self._pdf.set_xy(72, (10 * 72) + 20)
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
  
@@ -602,7 +756,124 @@ class PDFHelpers:
         self._pdf.set_xy(72, (10 * 72) + 20)
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
  
+    def __write_appendix_c(self): # bloodlines
 
+        self._pdf.add_page()
+        self.__appendix_c_start = self._pdf.page_no()
+
+        self._pdf.set_xy(72, 72)
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('appendix c', font='ogre'))
+        self._pdf.set_font('')
+
+        self._pdf.set_xy(72, self._pdf.get_y())
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, '\n[BLOODLINES]')
+        self._pdf.set_font('')
+
+        _column_number = 1
+        _current_letter = ''
+
+        def _first_page_of_appendix_c(self):
+            return self._pdf.page_no() == self.__appendix_c_start
+
+        for (_summary, _descendants) in self.__appendix_c:
+
+            print(_summary)
+
+            if not _descendants:
+                print(f'  - middle of tree')
+                continue 
+
+            def _next_column(self):
+                nonlocal _column_number
+                if _column_number == 1:
+                    self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_c(self) else 0) * 10))
+                    self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_c else 0))]), 0, 'C')
+                    self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_c(self) else 0) * 10))
+                    _column_number = 2
+                    print('***** SECOND COL *****')
+                elif _column_number == 2:
+                    self._pdf.set_xy(72, (10 * 72) + 20)
+                    self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                    
+                    self._pdf.add_page()
+                    self._pdf.set_xy(72, 72)
+                    _column_number = 1
+                    print('***** NEW   PAGE *****')
+                    print('***** FIRST  COL *****')
+
+
+            if _summary[0].upper() != _current_letter:
+                _current_letter = _summary[0].upper()
+
+                # check if room for 1 + subheader + 1 + 1 + 1 descendant
+                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1 + 1 + 1 + 1))):
+                    print('new section overflows')
+                    _next_column(self)
+
+                # set header position
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                # set header font + write header
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'[{_current_letter.upper()}]')
+                self._pdf.set_font('')
+
+                print(_current_letter + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+                
+                # add spacing before rows
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
+                # ancestor listed in bold
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+ 
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                self._pdf.set_font('')
+
+                for (ix, kin) in _descendants:
+
+                    if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1))):
+                        print('new section overflows')
+                        _next_column(self)
+
+                    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{"."*ix}{kin}')
+                    self._pdf.set_font('')
+                    print(f'{"."*ix}{kin}')
+                    self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+               
+
+            elif _summary[0].upper() == _current_letter:
+                # check if room for name + 1 descendant
+
+                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1 + 1))):
+                    print('name overflows')
+                    _next_column(self)
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
+ 
+
+                # ancestor listed in bold
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+ 
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                self._pdf.set_font('')
+
+                for (ix, kin) in _descendants:
+                    if self._pdf.get_y() > ((72 * 10) - (10)):
+                        print('new section overflows')
+                        _next_column(self)
+
+                    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{"."*ix}{kin}')
+                    self._pdf.set_font('')
+                    print(f'{"."*ix}{kin}')
+                    self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                
+                
+        # write page number at bottom of page
+        self._pdf.set_xy(72, (10 * 72) + 20)
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+ 
     def __write_title_page(self, prepared_for='muskiemania'):
         self._pdf.add_page()
 

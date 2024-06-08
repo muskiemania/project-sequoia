@@ -18,6 +18,18 @@ class Bible:
 
         return dict(_index)
 
+    def get_descendants(self):
+    
+        _descendants = []
+        _index = self.get_index()
+
+        for (_, chapter) in self._index.items():
+            for (_id, _person) in chapter.items():
+                p = person.Person(_person, _index).init()
+                _descendants.append((_id, p.children))
+
+        return dict(_descendants)
+
     def get_toc(self):
         
         return list(sorted(self._index.keys()))

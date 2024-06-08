@@ -76,6 +76,10 @@ class Born:
 
         return self
 
+    @property
+    def data(self):
+        return self._data
+
     def __str__(self):
         # Born Mmm dd, YYYY (? in City (?, ST) (? (CTY))) (? to SURNAME, FATHER MI (YYYY-)) (? and  SURNAME, MOTHER MI (YYYY-))
 

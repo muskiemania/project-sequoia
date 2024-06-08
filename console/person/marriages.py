@@ -7,10 +7,10 @@ from helpers import location_helpers
 class Marriages:
 
     def __init__(self, person):
-    
+
         try:
             self.__person = person
-            self._data = dict(person).get('marriages', {})
+            self._data = person.data.get('marriages', {})
 
         except:
             traceback.print_exc()
@@ -184,7 +184,6 @@ class Marriages:
         self._data = dict(enumerate(_marriages, 1))
 
     def init(self):
-
         return self
 
     def __str__(self):
@@ -244,6 +243,10 @@ class Marriages:
             _marriages.append(_output)
 
         return '. '.join(_marriages) + '.'
+
+    @property
+    def data(self):
+        return self._data
 
     def __dict__(self):
         return self._data

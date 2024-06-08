@@ -37,16 +37,42 @@ class Images:
     def all(self, _id):
         Image = type('Image', (object,), {
             'src': '',
-            'on': ''
+            'on': '',
+            'ver': '',
+            'short': ''
         })
 
         _images = []
 
-        if self.P1:
-            p1 = Image()
-            p1.src = self.P1.get('src').format(id=_id, ver='P1')
-            p1.on = self.P1.get('on')
-            _images.append(p1)
+        #if self.P1:
+        #    p1 = Image()
+        #    p1.src = self.P1.get('src').format(id=_id, ver='P1')
+        #    p1.on = self.P1.get('on')
+        #    _images.append(p1)
+
+        #return _images
+
+        _keys = ['P1', 'BAPTISM', 'FIRST EUCHARIST', 'CONFIRMATION', 'MARRIAGE', 'GRADUATION', 'RETIREMENT']
+
+        #Image = type('Image', (object,), {
+        #    'src': '',
+        #    'on': '',
+        #    'event': ''
+        #})
+
+        shorts = {
+                'FIRST EUCHARIST': 'EUCHARIST'
+                }
+
+        for k in _keys:
+            if k in self._data:
+                i = self._data.get(k)
+                img = Image()
+                img.src = i.get('src').format(id=_id, ver=k.replace(' ', '_'))
+                img.on = i.get('on')
+                img.ver = k
+                img.short = shorts[k] if k in shorts else k
+                _images.append(img)
 
         return _images
     
