@@ -58,23 +58,33 @@ class PDFHelpers:
 
         return self
 
+    @property
     def __page_number(self):
         return self._pdf.page_no() - 1
 
+    @property
     def __index_page(self):
         return roman.toRoman(self._pdf.page_no() - self.__index_start).lower()
     
-    def __write_gutter(self):
-        self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72)
-        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+    def __write_gutter(self, start_line = 1):
+        self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72 + ((start_line - 1) * 10))
+        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join(['|' for _ in range(64 - (start_line - 1))]), 0, 'C')
 
-    def __write_footer(self):
-        self._pdf.set_xy(72, 52)
-        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'{self.__this_page[0]}...')
-        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
-        self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'...{self.__this_page[-1]}', 0, 'R')
+    def __write_footer(self, page_number):
+        
+        # this is not the footer, but cannot write the header when start of page is writteen because do not know how much content is written (shrug)
+        if self.__this_page:
+            _first_name_on_page = self.__this_page[0]
+            _last_name_on_page = self.__this_page[-1]
+            self.__this_page = []
+            self._pdf.set_xy(72, 52)
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'{_first_name_on_page}...')
+            self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'...{_last_name_on_page}', 0, 'R')
+        
+        # write page number at bottom
         self._pdf.set_xy(72, (10 * 72) + 20)
-        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'-- Page {self.__page_number()} --', 0, 'C')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'-- Page {page_number} --', 0, 'C')
  
     def write_chapter(self, chapter, people_tree, _begin_chapter=True):
 
@@ -121,10 +131,9 @@ class PDFHelpers:
                     print('***** SECOND COL *****')
                 
                 elif self.__column_number == 2:
-                    self.__write_footer()
+                    self.__write_footer(self.__page_number)
                     
                     self._pdf.add_page()
-                    self.__this_page = []
                     self._pdf.set_xy(72, 72)
                     self.__column_number = 1
                     print('***** NEW   PAGE *****')
@@ -200,7 +209,7 @@ class PDFHelpers:
             self.__this_page.append(person.summary.split(',')[0])
             print(person.summary)
             print(_filled_synopsis + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
-            self.__index.append((person.summary, self.__page_number()))
+            self.__index.append((person.summary, self.__page_number))
 
             # generate appendix content
             self.__appendix_a.append((person.summary, person.appendix_a, person.images))
@@ -213,13 +222,14 @@ class PDFHelpers:
             _begin_chapter = False
 
     def complete(self):
-        if self.__this_page:
-            self._pdf.set_xy(72, 52)
-            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{self.__this_page[0]}...')
-            self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
-            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'...{self.__this_page[-1]}', 0, 'R')
-            self._pdf.set_xy(72, (10 * 72) + 20)
-            self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- Page {self.__page_number()} --', 0, 'C')
+        self.__write_footer(self.__page_number)
+        #if self.__this_page:
+        #    self._pdf.set_xy(72, 52)
+        #    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{self.__this_page[0]}...')
+        #    self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
+        #    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'...{self.__this_page[-1]}', 0, 'R')
+        #    self._pdf.set_xy(72, (10 * 72) + 20)
+        #    self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- Page {self.__page_number} --', 0, 'C')
  
         self.__write_index()
         self.__write_appendix_a()
@@ -253,15 +263,17 @@ class PDFHelpers:
                     print('new section overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
-                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self.__write_gutter()
+                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
+                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page)
+                        #self._pdf.set_xy(72, (10 * 72) + 20)
+                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -308,15 +320,17 @@ class PDFHelpers:
                     print('name overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
-                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
+                        self.__write_gutter()
+                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
+                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page)
+                        #self._pdf.set_xy(72, (10 * 72) + 20)
+                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -350,11 +364,11 @@ class PDFHelpers:
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
                 print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
-        self._pdf.set_xy(72, (10 * 72) + 20)
-        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self.__write_footer(self.__index_page)
+        #self._pdf.set_xy(72, (10 * 72) + 20)
+        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
 
     def __write_appendix_a(self): # special occasions
-        self.__this_page = []
         self._pdf.add_page()
         self.__appendix_a_start = self._pdf.page_no()
 
@@ -391,17 +405,17 @@ class PDFHelpers:
                     print('new section overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_a(self) else 0) * 10))
-                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_a else 0))]), 0, 'C')
+                        self.__write_gutter(8 if __first_page_of_appendix_a(self) else 1)
+                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_a(self) else 0) * 10))
+                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_a else 0))]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_a(self) else 0) * 10))
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self.__write_footer()
-                        self.__this_page = []
-                        self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page)
+                        #self._pdf.set_xy(72, (10 * 72) + 20)
+                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -510,17 +524,17 @@ class PDFHelpers:
                     print('name overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_a(self) else 0) * 10))
-                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_a(self) else 0))]), 0, 'C')
+                        self.__write_gutter(8 if _first_page_of_appendix_a(self) else 1)
+                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_a(self) else 0) * 10))
+                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_a(self) else 0))]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((7 if _first_page_of_appendix_a(self) else 0) * 10))
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self.__write_footer()
-                        self.__this_page = []
-                        self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page)
+                        #self._pdf.set_xy(72, (10 * 72) + 20)
+                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -613,9 +627,9 @@ class PDFHelpers:
                 self.__this_page.append(_summary.split(',')[0])
                 print(str(events) + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
-        self.__write_footer()
-        self._pdf.set_xy(72, (10 * 72) + 20)
-        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self.__write_footer(self.__index_page)
+        #self._pdf.set_xy(72, (10 * 72) + 20)
+        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
  
     def __write_appendix_b(self): # age at death
 
@@ -653,15 +667,17 @@ class PDFHelpers:
                     print('new section overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_b(self) else 0) * 10))
-                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_b else 0))]), 0, 'C')
+                        self.__write_gutter(8)
+                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_b(self) else 0) * 10))
+                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_b else 0))]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_b(self) else 0) * 10))
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page)
+                        #self._pdf.set_xy(72, (10 * 72) + 20)
+                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -709,15 +725,17 @@ class PDFHelpers:
                     print('name overflows')
                 
                     if _column_number == 1:
-                        self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_b(self) else 0) * 10))
-                        self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_b(self) else 0))]), 0, 'C')
+                        self.__write_gutter(8 if _first_page_of_appendix_b(self) else 1)
+                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_b(self) else 0) * 10))
+                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_b(self) else 0))]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((7 if _first_page_of_appendix_b(self) else 0) * 10))
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self._pdf.set_xy(72, (10 * 72) + 20)
-                        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page)
+                        #self._pdf.set_xy(72, (10 * 72) + 20)
+                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -753,8 +771,9 @@ class PDFHelpers:
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
                 print(_summary + ' ' + _age + ' ' + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
-        self._pdf.set_xy(72, (10 * 72) + 20)
-        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self.__write_footer(self.__index_page)
+        #self._pdf.set_xy(72, (10 * 72) + 20)
+        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
  
     def __write_appendix_c(self): # bloodlines
 
@@ -788,14 +807,16 @@ class PDFHelpers:
             def _next_column(self):
                 nonlocal _column_number
                 if _column_number == 1:
-                    self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_c(self) else 0) * 10))
-                    self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_c else 0))]), 0, 'C')
+                    self.__write_gutter(8 if _first_page_of_appendix_c(self) else 1)
+                    #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_c(self) else 0) * 10))
+                    #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_c else 0))]), 0, 'C')
                     self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_c(self) else 0) * 10))
                     _column_number = 2
                     print('***** SECOND COL *****')
                 elif _column_number == 2:
-                    self._pdf.set_xy(72, (10 * 72) + 20)
-                    self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                    self.__write_footer(self.__index_page)
+                    #self._pdf.set_xy(72, (10 * 72) + 20)
+                    #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
                     
                     self._pdf.add_page()
                     self._pdf.set_xy(72, 72)
@@ -871,8 +892,9 @@ class PDFHelpers:
                 
                 
         # write page number at bottom of page
-        self._pdf.set_xy(72, (10 * 72) + 20)
-        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self.__write_footer(self.__index_page)
+        #self._pdf.set_xy(72, (10 * 72) + 20)
+        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
  
     def __write_title_page(self, prepared_for='muskiemania'):
         self._pdf.add_page()
