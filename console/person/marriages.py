@@ -113,7 +113,7 @@ class Marriages:
             raise ValueError('marriage number is required to remove marriage')
 
         if not args.spouse:
-            raise ValueError('spouse is required to remove marriage')
+            raise ValueError('spouse is required to edit marriage')
 
         try:
             _marriage = self._data[args.num]

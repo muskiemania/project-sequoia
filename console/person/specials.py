@@ -252,6 +252,76 @@ class Specials:
 
         return '\n'.join(_specials)
 
+    @property
+    def as_list(self):
+        # Born Mmm dd, YYYY (? in City (?, ST) (? (CTY))) (? to SURNAME, FATHER MI (YYYY-)) (? and  SURNAME, MOTHER MI (YYYY-))
+
+        # LAST, FIRST (g) (YYYY-yyyy)
+        #    NAME on MMM. DD, YYYY 
+        #        at LOCATION
+        #        in CITY?, STATE?, COUNTRY?
+        #        Extra Info (i.e. 
+        #        By (...)
+        #        Godparents:
+        #            LAST, FIRST (g) (YYYY-yyyy)
+
+        _specials = []
+        for _event in self._consolidated:
+            _output = ''
+
+            _name = _event['name']
+            _output = f'  {_name.upper()}'
+            
+            if 'on' in _event:
+                __event = datetime.datetime.fromisoformat(_event['on'])
+                _event['on'] = __event.isoformat('|').split('|')[0]
+                _output += ' on ' + __event.strftime('%b. %d, %Y')
+            else:
+                continue
+
+            if 'by' in _event:
+                _by = _event['by']
+                _output += '\n' + f'    by {_by}' if _by else ''
+
+            if 'spouse' in _event:
+                _spouse_id = _event['spouse']
+                _spouse_name = self.__person._index.get(_spouse_id, '')
+                _spouse_name = _spouse_name.split('(')[0]
+                _output += '\n' + f'    to {_spouse_name}' if _spouse_name else ''
+
+            if 'school' in _event:
+                _school = _event['school']
+                _output += '\n' + f'    from {_school}' if _school else ''
+            if 'company' in _event:
+                _company = _event['company']
+                _output += ''.join(['\n' + f'    from {_co}' for _co in _company] if _company else [])
+
+            __location_helpers = location_helpers.LocationHelpers(_event)
+            if __location_helpers.specials():
+                _output += '\n' + __location_helpers.specials()
+
+            if 'degree' in _event:
+                _degrees = _event['degree']
+                _output += ''.join(['\n' + f'    with {_degree}' for _degree in _degrees] if _degrees else [])
+
+            if _name == 'BAPTISM' and 'godparents' in _event:
+                _gp = [self.__person._index[id] for id in _event['godparents']]
+                _birth_year = lambda x: int(re.search('\((\d{4})\-(\d{4})?\)$', x).group(1))
+                _is_male = lambda x: '(m)' not in x
+                _gp = sorted(_gp, key=lambda x: (_birth_year(x), _is_male(x)))
+                _gp = [gp.split('(')[0] for gp in _gp]
+                _output += '\n' + '    Godparents:' + '\n'
+                _output += '\n'.join([f'      {gp}' for gp in _gp])
+
+
+            _specials.append(_output)
+
+        #print(_specials)
+        if not _specials:
+            return []
+
+        return _specials
+
     def __dict__(self):
         return self._data
 

@@ -19,11 +19,14 @@ class Images:
         if self._data is None:
             self._data = {}
 
-        if args.img.upper() not in self._data:
-            self._data[args.img.upper()] = {}
+        _key = args.img.upper()
+        _key = _key + '_' + args.on.replace('-', '') if args.on else _key
 
-        self._data[args.img.upper()]['src'] = args.src or self._data[args.img.upper()]['src']
-        self._data[args.img.upper()]['on'] = args.on or 'unknown'
+        if _key not in self._data:
+            self._data[_key] = {}
+
+        self._data[_key]['src'] = args.src or self._data[_key]['src']
+        self._data[_key]['on'] = args.on or 'unknown'
 
         return self._data
 
@@ -64,15 +67,29 @@ class Images:
                 'FIRST EUCHARIST': 'EUCHARIST'
                 }
 
-        for k in _keys:
-            if k in self._data:
+        for k in self._data.keys():
+            if k in _keys or any([k.startswith(y) for y in _keys]):
                 i = self._data.get(k)
                 img = Image()
                 img.src = i.get('src').format(id=_id, ver=k.replace(' ', '_'))
                 img.on = i.get('on')
-                img.ver = k
-                img.short = shorts[k] if k in shorts else k
+                img.ver = k.split('_')[0]
+                img.short = shorts[k] if k in shorts else k.split('_')[0]
                 _images.append(img)
+
+        #for k in _keys:
+        #    if k in self._data:
+        #        i = self._data.get(k)
+        #        img = Image()
+        #        img.src = i.get('src').format(id=_id, ver=k.replace(' ', '_'))
+        #        img.on = i.get('on')
+        #        img.ver = k
+        #        img.short = shorts[k] if k in shorts else k
+        #        _images.append(img)
+
+        for _i in _images:
+            _i.short = 'GRADUATION' if _i.short.startswith('GRADUATION') else _i.short
+            _i.short = 'MARRIAGE' if _i.short.startswith('MARRIAGE') else _i.short
 
         return _images
     

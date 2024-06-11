@@ -265,7 +265,7 @@ if __name__ == '__main__':
         action='store',
         nargs='?',
         type=str,
-        choices=['P0', 'P1', 'P2', 'BAPTISM', 'FIRST EUCHARIST', 'CONFIRMATION', 'GRADUATION'],
+        choices=['P0', 'P1', 'P2', 'BAPTISM', 'FIRST EUCHARIST', 'CONFIRMATION', 'MARRIAGE', 'GRADUATION'],
         required=False,
         help='sets image parameters'
     )
@@ -383,6 +383,7 @@ if __name__ == '__main__':
 
         if _toc:
             _pdf = pdf_helpers.PDFHelpers().init(_config)
+            _pdf.toc = list(_toc)
         while _toc:
             _chapter = _toc.pop(0)
             _pages = _bible.get_chapter(_chapter)

@@ -4,6 +4,7 @@ import datetime
 import string
 import random
 import shutil
+import math
 
 import art
 import fpdf
@@ -12,6 +13,7 @@ import justifytext
 import roman
 
 from . import image_helpers
+from . import tab_helpers
 
 class PDFHelpers:
 
@@ -42,6 +44,7 @@ class PDFHelpers:
 
         self._config = None
         self._image_helpers = None
+        self.toc = []
 
     def init(self, _config):
         self._pdf.set_auto_page_break(False)
@@ -70,9 +73,12 @@ class PDFHelpers:
         self._pdf.set_xy(72 * self.__GUTTER_X_IN, 72 + ((start_line - 1) * 10))
         self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, self.__LINE_HEIGHT_PTS, '\n'.join(['|' for _ in range(64 - (start_line - 1))]), 0, 'C')
 
-    def __write_footer(self, page_number):
+    def __write_footer(self, page_number, section='A', sub=''):
         
         # this is not the footer, but cannot write the header when start of page is writteen because do not know how much content is written (shrug)
+        _first_name_on_page = ' '
+        _last_name_on_page = ' '
+
         if self.__this_page:
             _first_name_on_page = self.__this_page[0]
             _last_name_on_page = self.__this_page[-1]
@@ -81,7 +87,49 @@ class PDFHelpers:
             self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'{_first_name_on_page}...')
             self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
             self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'...{_last_name_on_page}', 0, 'R')
-        
+       
+        _t = tab_helpers.TabHelpers(toc=self.toc)
+        left = self.__page_number % 2 == 1
+        _x = 24 if left else (72 + (72 * self.__SINGLE_COLUMN_WIDTH_IN) + 24)
+        _y = 72
+
+        _start_end = {
+                'A': (_first_name_on_page[0], _last_name_on_page[0]),
+                'I': (None, None),
+                'X': (sub, None)
+                }
+
+
+        _tabs = _t.generate(section, start=_start_end[section][0], end=_start_end[section][1])
+
+        def __render_tabs(self, content):
+            nonlocal _x
+            nonlocal _y
+            mode = 'B' if content[0] == '*' else 'R'
+            search = '*' if mode == 'R' else '/'
+
+            while content:
+
+                print(f'mode: {mode} search: {search} _start: {content.find(search)} length: {len(content)}')
+
+                _start = content.find(search)
+                self._pdf.set_xy(_x, _y)
+                self._pdf.set_font(self.__DEFAULT_FONT, '' if mode == 'R' else 'B')
+                if _start < 0:
+                    self._pdf.multi_cell(72 * 0.5, self.__LINE_HEIGHT_PTS, content, 0, 'L')
+                    break
+
+                self._pdf.multi_cell(72 * 1, self.__LINE_HEIGHT_PTS, content[:_start], 0, 'L')
+                _y += (self.__LINE_HEIGHT_PTS * (len(content[:_start].split('\n')) - 1))
+                mode = 'B' if mode == 'R' else ('R' if mode == 'B' else mode)
+                search = '/' if mode == 'B' else ('*' if mode == 'R' else search)
+                content = content[_start:]
+                
+            self._pdf.set_font(self.__DEFAULT_FONT, '')
+ 
+
+        __render_tabs(self, _tabs)
+
         # write page number at bottom
         self._pdf.set_xy(72, (10 * 72) + 20)
         self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, self.__LINE_HEIGHT_PTS, f'-- Page {page_number} --', 0, 'C')
@@ -108,9 +156,9 @@ class PDFHelpers:
             _lines_chapter_title = len(_chapter_title.split('\n')) if _begin_chapter else 0
             _lines_for_person = len(_wrapped_extended) + len(_wrapped_synopsis)
 
-            #if len(person.images) > 1:
-            #    _lines_for_person += 10
-            if len(person.images) == 1:
+
+            _images = [i for i in person.images if i.ver in ['P0', 'P1', 'P2']]
+            if len(_images) == 1:
                 _wrapped_extended = justifytext.justify(person.extended, self.__COLUMN_WIDTH_CHARS_IMAGE)
                 _wrapped_synopsis = justifytext.justify(_synopsis, self.__COLUMN_WIDTH_CHARS_IMAGE)
      
@@ -223,13 +271,6 @@ class PDFHelpers:
 
     def complete(self):
         self.__write_footer(self.__page_number)
-        #if self.__this_page:
-        #    self._pdf.set_xy(72, 52)
-        #    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{self.__this_page[0]}...')
-        #    self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 52)
-        #    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'...{self.__this_page[-1]}', 0, 'R')
-        #    self._pdf.set_xy(72, (10 * 72) + 20)
-        #    self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- Page {self.__page_number} --', 0, 'C')
  
         self.__write_index()
         self.__write_appendix_a()
@@ -264,16 +305,12 @@ class PDFHelpers:
                 
                     if _column_number == 1:
                         self.__write_gutter()
-                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
-                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self.__write_footer(self.__index_page)
-                        #self._pdf.set_xy(72, (10 * 72) + 20)
-                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page, section='I')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -321,16 +358,12 @@ class PDFHelpers:
                 
                     if _column_number == 1:
                         self.__write_gutter()
-                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72)
-                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64)]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72)
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self.__write_footer(self.__index_page)
-                        #self._pdf.set_xy(72, (10 * 72) + 20)
-                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page, section='I')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -364,9 +397,7 @@ class PDFHelpers:
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
                 print(summary + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
-        self.__write_footer(self.__index_page)
-        #self._pdf.set_xy(72, (10 * 72) + 20)
-        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self.__write_footer(self.__index_page, section='I')
 
     def __write_appendix_a(self): # special occasions
         self._pdf.add_page()
@@ -385,65 +416,125 @@ class PDFHelpers:
         _column_number = 1
         _current_letter = ''
 
-        def _first_page_of_appendix_a(self):
+        def __first_page_of_appendix_a(self):
             return self._pdf.page_no() == self.__appendix_a_start
 
+        def __draw_images(self):
+            return
+
+        def __next_column(self, column_number):
+            if column_number == 1:
+                self.__write_gutter(8 if __first_page_of_appendix_a(self) else 1)
+                self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if __first_page_of_appendix_a(self) else 0) * 10))
+                # print NAME (continued...)
+
+                print('***** SECOND COL *****')
+                return 2
+
+            elif column_number == 2:
+                # add to _this_page
+                self.__write_footer(self.__index_page, section='X', sub='A')
+                    
+                self._pdf.add_page()
+                self._pdf.set_xy(72, 72)
+    
+                # print NAME (continued...)
+
+                print('***** NEW   PAGE *****')
+                print('***** FIRST  COL *****')
+                return 1
+        
+        def __write_header(self, letter):
+            self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'[{letter.upper()}]')
+            self._pdf.set_font('')
+
+        def __write_summary(self, summary, continued=False):
+
+            self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if continued else 10))
+            #self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+            if continued:
+                summary += '\n' + 'Continued...'
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{summary}')
+            self._pdf.set_font('')
+ 
+        def __write_events(self, events):
+            self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+               
+            self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, '\n'.join(events))
+
+
+
+
+        # FOR EACH PERSON
         for (_summary, events, images) in self.__appendix_a:
             print(f'{_summary}')
 
+            _events = events.as_list
 
-            if not str(events):
+            if not _events:
                 print(f'  - no events')
                 continue
-            
+
             if _summary[0].upper() != _current_letter:
                 _current_letter = _summary[0].upper()
 
-                # check if room for 1 + subheader + 1 + len(events)
-                _height = len(str(events).split('\n')) + (11 if bool(images) else 0)
-                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1 + 1 + _height))):
-                    print('new section overflows')
-                
-                    if _column_number == 1:
-                        self.__write_gutter(8 if __first_page_of_appendix_a(self) else 1)
-                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_a(self) else 0) * 10))
-                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_a else 0))]), 0, 'C')
-                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_a(self) else 0) * 10))
-                        _column_number = 2
-                        print('***** SECOND COL *****')
-
-                    elif _column_number == 2:
-                        self.__write_footer(self.__index_page)
-                        #self._pdf.set_xy(72, (10 * 72) + 20)
-                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
-                    
-                        self._pdf.add_page()
-                        self._pdf.set_xy(72, 72)
-                        _column_number = 1
-                        print('***** NEW   PAGE *****')
-                        print('***** FIRST  COL *****')
-
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
-                
-                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'[{_current_letter.upper()}]')
-                self._pdf.set_font('')
-
-                print(_current_letter + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
-
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
-                
-                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
-                self._pdf.set_font('')
-                print(_summary)
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
-               
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, str(events))
-
                 images = sorted([i for i in images if i.ver not in ['P1']], key=lambda x: x.on)
-                if images:
+ 
+                # SCENARIO A - the whole thing fits!
+                _len_e = len(str(events).split('\n'))
+                _len_i = math.ceil(len(images)/3) * (11 - 1)
+                _A = self._pdf.get_y() + (10 * (1 + 1 + 1 + 1 + _len_e + _len_i)) <= (72 * self.__LINE_HEIGHT_PTS)
+                # SCENARIO B - it doesnt fit - full push
+                _B = not _A and (len(_events) == 1 and images)
+                # SCENARIO C - it doesnt fit - split
+                #_C = not _A and (len(_events) > 1)
+                _C = False 
+                # must check if exists any viable split that fits
+                _i = len(_events) - 1
+
+                print('first in section')
+                print(f'A {_A} B {_B} C {_C}')
+                print(f'y: {self._pdf.get_y()} len_e: {_len_e} len_i: {_len_i}')
+
+                while not _A and _i >= 1:
+                    _height = len('\n'.join(_events[:_i]).split('\n'))
+                    _fits = self._pdf.get_y() + ((10 * (1 + 1 + 1 +_height))) <= (72 * self.__LINE_HEIGHT_PTS)
+                    if _fits:
+                        _C = True
+                        break
+
+                    _i = _i - 1
+
+
+                if (_B and not _C) or not any([_A, _B, _C]):
+                    print('scenario B')
+                    print('new section overflows')
+                    _column_number = __next_column(self, _column_number)
+                    __write_header(self, _current_letter)
+                    __write_summary(self, _summary)
+                    __write_events(self, _events)
+                    # write images
+                elif _C:
+                    print('scenario C')
+                    __write_header(self, _current_letter)
+                    __write_summary(self, _summary)
+                    __write_events(self, _events[:_i])
+                    print('section overflows')
+                    _column_number = __next_column(self, _column_number)
+                    __write_summary(self, _summary, True)
+                    __write_events(self, _events[_i:])
+                    # write images
+                elif _A:
+                    print('scenario A')
+                    __write_header(self, _current_letter)
+                    __write_summary(self, _summary)
+                    __write_events(self, _events)
+                    # write images
+                         
+                while images:
                     print(images)
                     # set position for first image
                     self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
@@ -477,7 +568,7 @@ class PDFHelpers:
                     _ascii_tree += '       ||' + '\n'
                     _ascii_tree += '       ||'
 
-                    for i, img in enumerate(images):
+                    for i, img in enumerate(images[:3]):
                         
                         (x, y) = _xy[str(i)]
 
@@ -494,13 +585,6 @@ class PDFHelpers:
                             with open(_dest, 'wb') as f:
                                 shutil.copyfileobj(_r.raw, f)
                             self._pdf.image(_dest, x, y, 72, 90, type='png')
-                            
-                            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
-                            self._pdf.set_xy(x, y - self.__LINE_HEIGHT_PTS)
-                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.short)
-                            self._pdf.set_xy(x, y + 90)
-                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.on[:10])
-                            self._pdf.set_font('')
                         except:
                             traceback.print_exc()
                             self._pdf.set_xy(x - 5, y)
@@ -509,53 +593,74 @@ class PDFHelpers:
                             os.remove(_dest)
 
                         finally:
+                            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                            self._pdf.set_xy(x, y - self.__LINE_HEIGHT_PTS)
+                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.short)
+                            self._pdf.set_xy(x, y + 90)
+                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.on[:10])
+                            self._pdf.set_font('')
                             self._pdf.rect(x, y, 72, 90, 'D')
 
-                    self._pdf.set_xy(_x, _y + 72 + 40)
-
+                    images = images[3:]
+                    self._pdf.set_xy(_x, _y + 72 + (30 if images else 40))
+                
                 print(str(events) + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
 
             elif _summary[0].upper() == _current_letter:
-                # check if room for name
-
-                _height = len(str(events).split('\n')) + (11 if bool(images) else 0)
-                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + _height))):
-                    print('name overflows')
                 
-                    if _column_number == 1:
-                        self.__write_gutter(8 if _first_page_of_appendix_a(self) else 1)
-                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_a(self) else 0) * 10))
-                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_a(self) else 0))]), 0, 'C')
-                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((7 if _first_page_of_appendix_a(self) else 0) * 10))
-                        _column_number = 2
-                        print('***** SECOND COL *****')
-
-                    elif _column_number == 2:
-                        self.__write_footer(self.__index_page)
-                        #self._pdf.set_xy(72, (10 * 72) + 20)
-                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
-                    
-                        self._pdf.add_page()
-                        self._pdf.set_xy(72, 72)
-                        _column_number = 1
-                        print('***** NEW   PAGE *****')
-                        print('***** FIRST  COL *****')
-
-
-
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
-                
-                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
-                self._pdf.set_font('')
-                print(_summary)
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
-               
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, str(events))
-
                 images = sorted([i for i in images if i.ver not in ['P1']], key=lambda x: x.on)
-                if images:
+ 
+
+
+                # SCENARIO A - the whole thing fits!
+                _len_e = len(str(events).split('\n'))
+                _len_i = math.ceil(len(images)/3) * (11 - 1)
+                _A = self._pdf.get_y() + (10 * (1 + 1 + _len_e + _len_i)) <= (72 * self.__LINE_HEIGHT_PTS)
+ 
+                # SCENARIO B - it doesnt fit - full push
+                _B = not _A and (len(_events) == 1 and images)
+                # SCENARIO C - it doesnt fit - split
+                #_C = not _A and (len(_events) > 1)
+                _C = False
+                # must check if exists any viable split that fits
+                _i = len(_events) - 1
+
+                print(f'A {_A} B {_B} C {_C}')
+                print(f'y: {self._pdf.get_y()} len_e: {_len_e} len_i: {_len_i}')
+
+                while not _A and _i >= 1:
+                    _height = len('\n'.join(_events[:_i]).split('\n'))
+                    _fits = self._pdf.get_y() + ((10 * (1 +_height))) <= (72 * self.__LINE_HEIGHT_PTS)
+                    if _fits:
+                        _C = True
+                        break
+
+                    _i = _i - 1
+
+                if (_B and not _C) or not any([_A, _B, _C]):
+                    print('scenario B')
+                    print('new section overflows')
+                    _column_number = __next_column(self, _column_number)
+                    __write_summary(self, _summary)
+                    __write_events(self, _events)
+                    # write images
+                elif _C:
+                    print('scenario C')
+                    __write_summary(self, _summary)
+                    __write_events(self, _events[:_i])
+                    print('section overflows')
+                    _column_number = __next_column(self, _column_number)
+                    __write_summary(self, _summary, True)
+                    __write_events(self, _events[_i:])
+                    # write images
+                elif _A:
+                    print('scenario A')
+                    __write_summary(self, _summary)
+                    __write_events(self, _events)
+                    # write images
+ 
+                while images:
                     print(images)
                     # set position for first image
                     self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
@@ -589,7 +694,7 @@ class PDFHelpers:
                     _ascii_tree += '       ||' + '\n'
                     _ascii_tree += '       ||'
 
-                    for i, img in enumerate(images):
+                    for i, img in enumerate(images[:3]):
                         
                         (x, y) = _xy[str(i)]
 
@@ -606,13 +711,6 @@ class PDFHelpers:
                             with open(_dest, 'wb') as f:
                                 shutil.copyfileobj(_r.raw, f)
                             self._pdf.image(_dest, x, y, 72, 90, type='png')
-
-                            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
-                            self._pdf.set_xy(x, y - self.__LINE_HEIGHT_PTS)
-                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.short)
-                            self._pdf.set_xy(x, y + 90)
-                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.on[:10])
-                            self._pdf.set_font('')
                         except:
                             traceback.print_exc()
                             self._pdf.set_xy(x - 5, y)
@@ -620,16 +718,21 @@ class PDFHelpers:
                         else:
                             os.remove(_dest)
                         finally:
+                            self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                            self._pdf.set_xy(x, y - self.__LINE_HEIGHT_PTS)
+                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.short)
+                            self._pdf.set_xy(x, y + 90)
+                            self._pdf.multi_cell(72, self.__LINE_HEIGHT_PTS, img.on[:10])
+                            self._pdf.set_font('')
                             self._pdf.rect(x, y, 72, 90, 'D')
 
-                    self._pdf.set_xy(_x, _y + 72 + 50)
+                    images = images[3:]
+                    self._pdf.set_xy(_x, _y + 72 + (30 if images else 40))
 
-                self.__this_page.append(_summary.split(',')[0])
-                print(str(events) + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+            self.__this_page.append(_summary.split(',')[0])
+            print(str(events) + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
-        self.__write_footer(self.__index_page)
-        #self._pdf.set_xy(72, (10 * 72) + 20)
-        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self.__write_footer(self.__index_page, section='X', sub='A')
  
     def __write_appendix_b(self): # age at death
 
@@ -668,16 +771,12 @@ class PDFHelpers:
                 
                     if _column_number == 1:
                         self.__write_gutter(8)
-                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_b(self) else 0) * 10))
-                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_b else 0))]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_b(self) else 0) * 10))
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self.__write_footer(self.__index_page)
-                        #self._pdf.set_xy(72, (10 * 72) + 20)
-                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page, section='X', sub='B')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -726,16 +825,12 @@ class PDFHelpers:
                 
                     if _column_number == 1:
                         self.__write_gutter(8 if _first_page_of_appendix_b(self) else 1)
-                        #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_b(self) else 0) * 10))
-                        #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_b(self) else 0))]), 0, 'C')
                         self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((7 if _first_page_of_appendix_b(self) else 0) * 10))
                         _column_number = 2
                         print('***** SECOND COL *****')
 
                     elif _column_number == 2:
-                        self.__write_footer(self.__index_page)
-                        #self._pdf.set_xy(72, (10 * 72) + 20)
-                        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                        self.__write_footer(self.__index_page, section='X', sub='B')
                     
                         self._pdf.add_page()
                         self._pdf.set_xy(72, 72)
@@ -771,9 +866,7 @@ class PDFHelpers:
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
                 print(_summary + ' ' + _age + ' ' + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
-        self.__write_footer(self.__index_page)
-        #self._pdf.set_xy(72, (10 * 72) + 20)
-        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self.__write_footer(self.__index_page, section='X', sub='B')
  
     def __write_appendix_c(self): # bloodlines
 
@@ -808,15 +901,11 @@ class PDFHelpers:
                 nonlocal _column_number
                 if _column_number == 1:
                     self.__write_gutter(8 if _first_page_of_appendix_c(self) else 1)
-                    #self._pdf.set_xy(self.__GUTTER_X_IN * 72, 72 + ((8 if _first_page_of_appendix_c(self) else 0) * 10))
-                    #self._pdf.multi_cell(72 * self.__GUTTER_WIDTH_IN, 10.0, '\n'.join(['|' for _ in range(64 - (7 if _first_page_of_appendix_c else 0))]), 0, 'C')
                     self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_c(self) else 0) * 10))
                     _column_number = 2
                     print('***** SECOND COL *****')
                 elif _column_number == 2:
-                    self.__write_footer(self.__index_page)
-                    #self._pdf.set_xy(72, (10 * 72) + 20)
-                    #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+                    self.__write_footer(self.__index_page, section='X', sub='C')
                     
                     self._pdf.add_page()
                     self._pdf.set_xy(72, 72)
@@ -892,9 +981,7 @@ class PDFHelpers:
                 
                 
         # write page number at bottom of page
-        self.__write_footer(self.__index_page)
-        #self._pdf.set_xy(72, (10 * 72) + 20)
-        #self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, f'-- {self.__index_page()} --', 0, 'C')
+        self.__write_footer(self.__index_page, section='X', sub='C')
  
     def __write_title_page(self, prepared_for='muskiemania'):
         self._pdf.add_page()
