@@ -58,7 +58,7 @@ class PDFHelpers:
         self._config = _config
         self._image_helpers = image_helpers.ImageHelpers().init(_config)
 
-        print(self._image_helpers)
+        #print(self._image_helpers)
 
         return self
 

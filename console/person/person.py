@@ -11,8 +11,13 @@ class Person:
         self._index = _index
         self.sort_key = None
         self.tree = None
+        self._config = None
 
-    def init(self):
+    def init(self, _config=None):
+
+        if _config:
+            self._config = _config
+
         _basic = basic.Basic(self).init()
         _born = born.Born(self).init()
         self.sort_key = f'{_basic.surname}, {_basic.given} {_basic.middle[0] if _basic.middle else ""} ({_born.year}'
@@ -93,7 +98,7 @@ class Person:
 
     @property
     def images(self):
-        _images = images.Images(self).init()
+        _images = images.Images(self).init(self._config)
 
         return _images.all(self.id)
 
@@ -166,7 +171,7 @@ class Person:
         if not _dead:
             return ''
 
-        _images = images.Images(self).init()
+        _images = images.Images(self).init(self._config)
         _stone = [i for i in _images.all(self.id) if i.ver == 'GRAVESTONE']
 
         if _stone:

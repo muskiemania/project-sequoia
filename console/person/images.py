@@ -1,4 +1,7 @@
 import traceback
+import requests
+
+from helpers import image_helpers
 
 class Images:
 
@@ -28,12 +31,30 @@ class Images:
         self._data[_key]['src'] = args.src or self._data[_key]['src']
         self._data[_key]['on'] = args.on or 'unknown'
 
+        if args.put:
+            # first need to try to get the local file bytes
+            print('PUT')
+            print(args.put)
+            try:
+                with open(args.put, 'rb') as f:
+                    object_key = f'{self.__person.id}_{_key}.png'
+                    files = {'file': (object_key, f)}
+                    presigned = self._image_helpers.create_presigned_post(object_key)
+                    http_response = requests.post(presigned['url'], data=presigned['fields'], files=files)
+                    print(http_response)
+            except:
+                print('could not upload file to remote storage')
+                
+                traceback.print_exc()
+
         return self._data
 
-    def init(self):
+    def init(self, _config):
 
         if self._data is None:
             self._data = {}
+
+        self._image_helpers = image_helpers.ImageHelpers().init(_config)
 
         return self
 

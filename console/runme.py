@@ -278,6 +278,14 @@ if __name__ == '__main__':
         help='sets image source'
     )
 
+    _parser.add_argument('-put',
+        action='store',
+        nargs='?',
+        type=str,
+        required=False,
+        help='sets local file to put to remote storage'
+    )
+
     _parser.add_argument('-T', 
         action='store', 
         type=str, 
@@ -367,7 +375,7 @@ if __name__ == '__main__':
             _specials = specials.Specials(_person).load(_args)
             _bible.set(_args.E.lower(), _id, 'specials', _specials)
         if _args.img: # and _args.src:
-            _images = images.Images(_person).load(_args)
+            _images = images.Images(_person).init(_config).load(_args)
             _bible.set(_args.E.lower(), _id, 'images', _images)
             print(f' here - {_args.img} - {_args.src}')
 
@@ -387,7 +395,7 @@ if __name__ == '__main__':
         while _toc:
             _chapter = _toc.pop(0)
             _pages = _bible.get_chapter(_chapter)
-            _pdf.write_chapter(_chapter, sorted([(person.Person(v, _index).init(), _tree) for (k, v) in _pages.items()], key=lambda x: x[0].sort_key))
+            _pdf.write_chapter(_chapter, sorted([(person.Person(v, _index).init(_config), _tree) for (k, v) in _pages.items()], key=lambda x: x[0].sort_key))
         
         _pdf.complete()
 
