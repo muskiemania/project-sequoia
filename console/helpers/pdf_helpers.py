@@ -24,6 +24,7 @@ class PDFHelpers:
         self.__appendix_a = []
         self.__appendix_b = []
         self.__appendix_c = []
+        self.__appendix_d = []
         self.__column_number = None
         self.__wrapper = None
         self.__first_chapter = False
@@ -257,7 +258,7 @@ class PDFHelpers:
             self.__this_page.append(person.summary.split(',')[0])
             print(person.summary)
             print(_filled_synopsis + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
-            self.__index.append((person.summary, self.__page_number))
+            self.__index.append((person.summary, self.__page_number, person.id))
 
             # generate appendix content
             self.__appendix_a.append((person.summary, person.appendix_a, person.images))
@@ -265,7 +266,10 @@ class PDFHelpers:
             
             person.tree = tree
             if person.appendix_c:
-                self.__appendix_c.append((person.summary, person.appendix_c))
+                self.__appendix_c.append((person.summary, self.__page_number, person.appendix_c))
+
+            if person.appendix_d:
+                self.__appendix_d.append(tuple(person.summary) + person.appendix_d)
 
             _begin_chapter = False
 
@@ -276,6 +280,7 @@ class PDFHelpers:
         self.__write_appendix_a()
         self.__write_appendix_b()
         self.__write_appendix_c()
+        self.__write_appendix_d()
 
         while self._pdf.page_no() % 4 > 0:
             self._pdf.add_page()
@@ -296,7 +301,7 @@ class PDFHelpers:
         _column_number = 1
         _current_letter = ''
 
-        for (summary, page_num) in self.__index:
+        for (summary, page_num, _) in self.__index:
             if summary[0].upper() != _current_letter:
                 _current_letter = summary[0].upper()
                 # check if room for 1 + subheader + 1 + name
@@ -889,7 +894,12 @@ class PDFHelpers:
         def _first_page_of_appendix_c(self):
             return self._pdf.page_no() == self.__appendix_c_start
 
-        for (_summary, _descendants) in self.__appendix_c:
+        def _generate_page_lookup(self):
+
+            _lookup = { i:p for (s, p, i) in self.__index}
+            return _lookup
+
+        for (_summary, _page, _descendants) in self.__appendix_c:
 
             print(_summary)
 
@@ -913,6 +923,33 @@ class PDFHelpers:
                     print('***** NEW   PAGE *****')
                     print('***** FIRST  COL *****')
 
+            def _apply_index(self, summary, page):
+
+##
+                _summary_with_index = summary + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + 2 + len(str(page)) + len(summary)))) + ('  ' + str(page))
+
+                if len(summary) > 37:
+                    # if the summary line is wider than the column, 
+                    # then need to split the summary at the appropriate place 
+                    # and then put the dots and page number on the next line
+                    _split = _summary_with_index.find(' ', 30)
+                    
+                    if _split == -1 and len(summary) <= self.__COLUMN_WIDTH_CHARS:
+                        _line_1 = summary
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page))))) + ('  ' + str(page))
+                    elif summary[_split:].strip() == '':
+                        _line_1 = summary[:_split]
+                        _line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (2 + len(str(page))))) + ('  ' + str(page))
+                    else:
+                        _line_1 = summary[:_split]
+                        _line_2 = summary[_split:]
+                        _line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(str(page))))) + ('  ' + str(page))
+                    
+                    _summary_with_index = '\n'.join([_line_1, _line_2])
+
+                return _summary_with_index
+
+##
 
             if _summary[0].upper() != _current_letter:
                 _current_letter = _summary[0].upper()
@@ -936,17 +973,27 @@ class PDFHelpers:
                 # ancestor listed in bold
                 self._pdf.set_font(self.__DEFAULT_FONT, 'B')
  
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
+                # self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
+                # self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                # self._pdf.set_font('')
+
+                _summary_with_index = _apply_index(self, _summary, _page)
+
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary_with_index)
                 self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                 self._pdf.set_font('')
 
-                for (ix, kin) in _descendants:
+
+
+                for (ix, kin, _id) in _descendants:
 
                     if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1))):
                         print('new section overflows')
                         _next_column(self)
 
-                    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{"."*ix}{kin}')
+                    _lookup = _generate_page_lookup(self)
+                    _with_index = _apply_index(self, f'{"."*ix}{kin}', _lookup.get(_id))
+                    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _with_index)
                     self._pdf.set_font('')
                     print(f'{"."*ix}{kin}')
                     self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
@@ -964,17 +1011,21 @@ class PDFHelpers:
 
                 # ancestor listed in bold
                 self._pdf.set_font(self.__DEFAULT_FONT, 'B')
- 
-                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary)
+
+                _summary_with_index = _apply_index(self, _summary, _page)
+
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _summary_with_index)
                 self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
                 self._pdf.set_font('')
 
-                for (ix, kin) in _descendants:
+                for (ix, kin, _id) in _descendants:
                     if self._pdf.get_y() > ((72 * 10) - (10)):
                         print('new section overflows')
                         _next_column(self)
 
-                    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'{"."*ix}{kin}')
+                    _lookup = _generate_page_lookup(self)
+                    _with_index = _apply_index(self, f'{"."*ix}{kin}', _lookup.get(_id))
+                    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _with_index)
                     self._pdf.set_font('')
                     print(f'{"."*ix}{kin}')
                     self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
@@ -982,7 +1033,112 @@ class PDFHelpers:
                 
         # write page number at bottom of page
         self.__write_footer(self.__index_page, section='X', sub='C')
+
+    def __write_appendix_d(self):
+
+        self._pdf.add_page()
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+
+        self._pdf.set_xy(72, 72)
  
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('appendix d', font='ogre'))
+        self._pdf.set_font('')
+
+        self._pdf.set_xy(72, self._pdf.get_y())
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, '\n[GRAVESTONE ARCHIIVE]')
+        self._pdf.set_font('')
+
+        _x = 72
+        _y = self._pdf.get_y() + 20
+
+        images = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]
+
+        while images:
+
+            if _y + 10 + 90 + 20 > (72 * 10):
+                # next page
+                self.__write_footer(self.__index_page, section='X', sub='D')
+                    
+                self._pdf.add_page()
+                _x = 72
+                _y = 72
+                print('***** NEW   PAGE *****')
+
+            _xy = {}
+            _xy['0'] = (_x, _y + 10)
+            _xy['1'] = (_x + 144 + 18, _y + 10)
+            _xy['2'] = (_x + 144 + 18 + 144 + 18, _y + 10)
+
+            #  | --- 144 --- | 18 |--- 144 --- | 18 | --- 144 --- |
+
+            #     /\      
+            #    /\*\     
+            #   /\O\*\    
+            #  /*/\/\/\   
+            # /\O\/\*\/\  
+            #     ||      
+            #     ||      
+            #     ||      
+                    
+            _ascii_tree = '' + '\n'
+            _ascii_tree += '      /\\      '*2 + '\n'      
+            _ascii_tree += '     /\\*\\     '*2 + '\n'     
+            _ascii_tree += '    /\\O\\*\\    '*2 + '\n'    
+            _ascii_tree += '   /*/\\/\\/\\   '*2 + '\n'   
+            _ascii_tree += '  /\\O\\/\\*\\/\\  '*2 + '\n'
+            _ascii_tree += '      ||      '*2 + '\n'
+            _ascii_tree += '      ||      '*2
+
+            for i, img in enumerate(images[:3]):
+                        
+                (x, y) = _xy[str(i)]
+
+                if y + 10 + 90 + 20 > (72 * 10):
+                    # next page
+                    self.__write_footer(self.__index_page, section='X', sub='D')
+                    
+                    self._pdf.add_page()
+                    self._pdf.set_xy(72, 72)
+                    print('***** NEW   PAGE *****')
+
+                try:
+                    _url = self._image_helpers.get_presigned_url(img.src)
+                    _r = requests.get(_url, stream=True)
+
+                    if _r.status_code != 200:
+                        print(f'presigned url: {_url}')
+                        raise Exception('not 200 from aws - ' + str(_r.content))
+
+                    _dest = 'tmp/' + img.src
+
+                    with open(_dest, 'wb') as f:
+                        shutil.copyfileobj(_r.raw, f)
+                    self._pdf.image(_dest, x, y, 144, 90, type='png')
+                except:
+                    traceback.print_exc()
+                    self._pdf.set_xy(x, y)
+                    self._pdf.multi_cell(144, 10.0, _ascii_tree)
+                else:
+                    os.remove(_dest)
+                finally:
+                    self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                    self._pdf.set_xy(x, y - self.__LINE_HEIGHT_PTS)
+                    self._pdf.multi_cell(144, self.__LINE_HEIGHT_PTS, 'short') #img.short)
+                self._pdf.set_xy(x, y + 90)
+                self._pdf.multi_cell(90, self.__LINE_HEIGHT_PTS, f'on {img}') #img.on[:10])
+                self._pdf.set_font('')
+                self._pdf.rect(x, y, 144, 90, 'D')
+                print(f'printed img {img}')
+
+            images = images[3:]
+            _x = 72 
+            _y = _y + 90 + (30 if images else 40)
+
+        self.__write_footer(self.__index_page, section='X', sub='D')
+ 
+
+
     def __write_title_page(self, prepared_for='muskiemania'):
         self._pdf.add_page()
 

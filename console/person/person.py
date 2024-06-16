@@ -156,8 +156,23 @@ class Person:
 
         #print(_descendants)
 
-        _descendants = [(ix, self._index[_id]) for (ix, _id) in _descendants]
+        _descendants = [(ix, self._index[_id], _id) for (ix, _id) in _descendants]
         return _descendants
+
+    @property
+    def appendix_d(self):
+        _dead = died.Died(self).init()
+
+        if not _dead:
+            return ''
+
+        _images = images.Images(self).init()
+        _stone = [i for i in _images.all(self.id) if i.ver == 'GRAVESTONE']
+
+        if _stone:
+            return (_dead, _stone[0])
+        
+        return ''
 
     @property
     def data(self):
