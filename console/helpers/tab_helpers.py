@@ -7,7 +7,7 @@ class TabHelpers:
 
         self._toc = sorted(toc)
         self.index = True
-        self.appendix = ['a', 'b', 'c', 'd']
+        self.appendix = ['a', 'b', 'c', 'd', 'e']
 
     def generate(self, section, start='', end=''):
 
@@ -32,7 +32,7 @@ class TabHelpers:
         _appendix = map(lambda x: x.replace('/', '*') if section in 'X' else x, _appendix)
         _appendix = map(lambda x: x.replace('-', '*') if section in 'X' else x, _appendix)
 
-        _appendixes = [('-----', letter.upper(), f'/ {letter.upper()} /', '-----') for letter in 'ABCD']
+        _appendixes = [('-----', letter.upper(), f'/ {letter.upper()} /', '-----') for letter in 'ABCDE']
         if section in 'X' and start:
             for (i, (a, b, c, d)) in enumerate(_appendixes):
                 if start == b:

@@ -25,6 +25,7 @@ class PDFHelpers:
         self.__appendix_b = []
         self.__appendix_c = []
         self.__appendix_d = []
+        self.__appendix_e = []
         self.__column_number = None
         self.__wrapper = None
         self.__first_chapter = False
@@ -271,6 +272,9 @@ class PDFHelpers:
             if person.appendix_d:
                 self.__appendix_d.append(tuple(person.summary) + person.appendix_d)
 
+            if person.appendix_e:
+                self.__appendix_e.append((person.summary, person.appendix_e))
+
             _begin_chapter = False
 
     def complete(self):
@@ -281,6 +285,7 @@ class PDFHelpers:
         self.__write_appendix_b()
         self.__write_appendix_c()
         self.__write_appendix_d()
+        self.__write_appendix_e()
 
         while self._pdf.page_no() % 4 > 0:
             self._pdf.add_page()
@@ -490,7 +495,9 @@ class PDFHelpers:
  
                 # SCENARIO A - the whole thing fits!
                 _len_e = len(str(events).split('\n'))
-                _len_i = math.ceil(len(images)/3) * (11 - 1)
+                _len_i = (math.ceil(len(images)/3) * (11 - 1)) + ((math.ceil(len(images)/3)) - 1) * 3
+
+
                 _A = self._pdf.get_y() + (10 * (1 + 1 + 1 + 1 + _len_e + _len_i)) <= (72 * self.__LINE_HEIGHT_PTS)
                 # SCENARIO B - it doesnt fit - full push
                 _B = not _A and (len(_events) == 1 and images)
@@ -620,7 +627,9 @@ class PDFHelpers:
 
                 # SCENARIO A - the whole thing fits!
                 _len_e = len(str(events).split('\n'))
-                _len_i = math.ceil(len(images)/3) * (11 - 1)
+                _len_i = (math.ceil(len(images)/3) * (11 - 1)) + ((math.ceil(len(images)/3)) - 1) * 3
+
+
                 _A = self._pdf.get_y() + (10 * (1 + 1 + _len_e + _len_i)) <= (72 * self.__LINE_HEIGHT_PTS)
  
                 # SCENARIO B - it doesnt fit - full push
@@ -944,7 +953,6 @@ class PDFHelpers:
                         _line_1 = summary[:_split]
                         _line_2 = summary[_split:]
                         _line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(str(page))))) + ('  ' + str(page))
-                    
                     _summary_with_index = '\n'.join([_line_1, _line_2])
 
                 return _summary_with_index
@@ -1137,7 +1145,221 @@ class PDFHelpers:
 
         self.__write_footer(self.__index_page, section='X', sub='D')
  
+    def __write_appendix_e(self): # etymology/origins of names
 
+        self._pdf.add_page()
+        self.__appendix_e_start = self._pdf.page_no()
+
+        self._pdf.set_xy(72, 72)
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, art.text2art('appendix e', font='ogre'))
+        self._pdf.set_font('')
+
+        self._pdf.set_xy(72, self._pdf.get_y())
+        self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+        self._pdf.multi_cell(72 * self.__SINGLE_COLUMN_WIDTH_IN, 10.0, '\n[ETYMOLOGIES/ORIGINS OF NAMES]')
+        self._pdf.set_font('')
+
+        _column_number = 1
+        _current_letter = ''
+
+        def _first_page_of_appendix_e(self):
+            return self._pdf.page_no() == self.__appendix_e_start
+
+        for (_summary, _names) in self.__appendix_e:
+            print(f'{_summary}')
+            print('.')
+
+            __names = _names.as_list
+            print('__names')
+            print(__names)
+
+
+            def create_aligned_text(rows):
+                _aligned = []
+                while rows:
+                    r = rows.pop(0)
+
+                    leading = len(r) - len(r.lstrip())
+                    r = r.strip()
+                    if (len(r) + leading) <= 43:
+                        _aligned.append((' ' * leading) + r)
+                        continue
+
+                    r = r.split(' ')
+                    _words = ' ' * leading
+                    while r:
+                        _words += ' ' if len(_words) > leading else ''
+                        _w = r.pop(0)
+                        print(_w)
+                        _words += _w if len(_words) + len(_w) <= 43 else ''
+
+                        if not _words.endswith(_w):
+                            r.insert(0, _w)
+                            _aligned.append(_words)
+                            _words = ' ' * (leading + 2)
+                            continue
+
+                    _aligned.append(_words)
+                        
+                return _aligned
+
+            __names = [create_aligned_text(e) for e in _names.as_list]
+
+            print('.')
+            for e in __names:
+                print(e)
+
+            ############################################
+            #
+            # MUSKIVITCH, JENNA K (f) (yyyy-?)         *
+            #
+            #   "Jenna": 4# 1 + (1+1) + 1 + (2+3+1) + 1 + (1+2) + 1 + (1+1)
+            #       english for "Jenny", "Jennifer"
+            #       means "fair, magical being"
+            #   
+            #       welsh for "Guinevere", 
+            #           "Gweenhwyfar"
+            #       translations: 
+            #           'Gwen' (white, fair)
+            #           'hwyfar' (smooth, soft)
+            #       means "fair one", "white shadow"
+            #
+            #       greek for "Jane", "Janet"
+            #       means "paradise", "little bird", 
+            #           "heaven"
+            #
+            #       arabic/hebrew translations:
+            #           "little bird"
+            #
+            # MUSKIVITCH, JENNA K (f) (yyyy-?)
+            # Continued...
+            #
+            #   "Karen": 1# 1 + (3)
+            #       named after late maternal 
+            #       grandmother, WOLBERS, KAREN LEE 
+            #       (1957-2004)
+            #
+            ###########################################
+
+            def _next_column(self):
+                nonlocal _column_number
+                if _column_number == 1:
+                    self.__write_gutter(8 if _first_page_of_appendix_e(self) else 1)
+                    self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((6 if _first_page_of_appendix_e(self) else 0) * 10))
+                    _column_number = 2
+                    print('***** SECOND COL *****')
+                elif _column_number == 2:
+                    self.__write_footer(self.__index_page, section='X', sub='E')
+                    
+                    self._pdf.add_page()
+                    self._pdf.set_xy(72, 72)
+                    _column_number = 1
+                    print('***** NEW   PAGE *****')
+                    print('***** FIRST  COL *****')
+
+            if _summary[0].upper() != _current_letter:
+                _current_letter = _summary[0].upper()
+
+                # check if room for 1 + subheader + 1 + name + group1
+                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1 + 1 + 1 + len(__names[0])))):
+                    print('new section overflows')
+                    _next_column()
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + (0 if self._pdf.get_y() == 72 else 10))
+                
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B')
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, f'[{_current_letter.upper()}]')
+                self._pdf.set_font('')
+
+                print(_current_letter + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
+            
+                
+                _indexed_summary = _summary
+
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B') 
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
+                self._pdf.set_font('')
+           
+                print('1278')
+                print(_column_number)
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+ 
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, '\n'.join(__names.pop(0)))
+
+                print('__names is')
+                print(__names)
+
+                while __names:
+                
+                    if self._pdf.get_y() > ((72 * 10) - (10 * (1 + len(__names[0])))):
+                        print('overflows...')
+                        _next_column()
+                
+                    self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+ 
+                    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, '\n'.join(__names.pop(0)))
+
+                  
+
+
+                #print(_summary + ' ' + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+
+
+            elif _summary[0].upper() == _current_letter:
+                # check if room for name
+                if self._pdf.get_y() > ((72 * 10) - 10):
+                    print('name overflows')
+                
+                    if _column_number == 1:
+                        self.__write_gutter(8 if _first_page_of_appendix_e(self) else 1)
+                        self._pdf.set_xy(72 * self.__SECOND_COLUMN_X_IN, 72 + ((7 if _first_page_of_appendix_e(self) else 0) * 10))
+                        _column_number = 2
+                        print('***** SECOND COL *****')
+
+                    elif _column_number == 2:
+                        self.__write_footer(self.__index_page, section='X', sub='E')
+                    
+                        self._pdf.add_page()
+                        self._pdf.set_xy(72, 72)
+                        _column_number = 1
+                        print('***** NEW   PAGE *****')
+                        print('***** FIRST  COL *****')
+
+
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                
+                _indexed_summary = _summary
+                #_indexed_summary = _summary + ' ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (1 + 1 + len(_age) + len(_summary)))) + (' ' + _age)
+
+                if len(_summary) > 27:
+                    # if the summary line is wider than the column,
+                    # then need to split the summary at the appropriate place
+                    # and then put the dots and the page number on the next line
+                    _split = _indexed_summary.find(' ', 30)
+
+                    if _split == -1 and len(_summary) <= self.__COLUMN_WIDTH_CHARS:
+                        _line_1 = _summary
+                        #_line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (1 + len(_age)))) + (' ' + _age)
+                    elif _summary[_split:].strip() == '':
+                        _line_1 = _summary[:_split]
+                        #_line_2 = ('.'*(self.__COLUMN_WIDTH_CHARS - (1 + len(_age)))) + (' ' + _age)
+                    else:
+                        _line_1 = _summary[:_split]
+                        #_line_2 = _summary[_split:]
+                        #_line_2 = '   ' + _line_2 + '  ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (3 + 2 + 2 + len(_line_2) + len(_age)))) + ('  ' + _age)
+
+                    _line_2 = ''
+                    _indexed_summary = '\n'.join([_line_1, _line_2])
+
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
+                print(_summary + ' ' + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
+
+        self.__write_footer(self.__index_page, section='X', sub='E')
+ 
 
     def __write_title_page(self, prepared_for='muskiemania'):
         self._pdf.add_page()

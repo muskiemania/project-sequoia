@@ -2,7 +2,7 @@ import uuid
 import datetime
 import dateutil
 import re
-from person import basic, born, marriages, died, buried, images, specials
+from person import basic, born, marriages, died, buried, images, specials, etymology
 
 class Person:
 
@@ -178,6 +178,12 @@ class Person:
             return (_dead, _stone[0])
         
         return ''
+
+    @property
+    def appendix_e(self):
+        _etymology = etymology.Etymology(self).init()
+
+        return _etymology
 
     @property
     def data(self):
