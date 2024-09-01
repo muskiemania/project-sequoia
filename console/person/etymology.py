@@ -210,7 +210,8 @@ class Etymology:
             _output = ''
 
             _name = _each['name']
-            _output = f'  {_name.upper()}:'
+            _type = _each['type']
+            _output = f'  {_name.upper() ({_type.upper()})}:'
 
             for _origin in _each['origins']:
                 _o = _origin['origin']
@@ -287,7 +288,8 @@ class Etymology:
         _etymology = []
         for _each in self._data:
             _name = _each['name']
-            _output = [f'  {_name.upper()}:']
+            _type = _each['type']
+            _output = [f'  {_name.upper()} ({_type.upper()}):']
 
             for _origin in _each['origins']:
                 _o = _origin['origin']
