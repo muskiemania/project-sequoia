@@ -1310,6 +1310,13 @@ class PDFHelpers:
 
             elif _summary[0].upper() == _current_letter:
                 # check if room for name
+
+                if self._pdf.get_y() > ((72 * 10) - (10 * (1 + 1 + len(__names[0])))):
+                    print('new section overflows')
+                    _next_column()
+
+
+                '''
                 if self._pdf.get_y() > ((72 * 10) - 10):
                     print('name overflows')
                 
@@ -1327,10 +1334,10 @@ class PDFHelpers:
                         _column_number = 1
                         print('***** NEW   PAGE *****')
                         print('***** FIRST  COL *****')
+                '''
 
 
-
-                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y() + 10)
                 
                 _indexed_summary = _summary
                 #_indexed_summary = _summary + ' ' + ('.'*(self.__COLUMN_WIDTH_CHARS - (1 + 1 + len(_age) + len(_summary)))) + (' ' + _age)
@@ -1355,7 +1362,31 @@ class PDFHelpers:
                     _line_2 = ''
                     _indexed_summary = '\n'.join([_line_1, _line_2])
 
+
+                self._pdf.set_font(self.__DEFAULT_FONT, 'B') 
                 self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, _indexed_summary)
+                self._pdf.set_font('')
+           
+                print(_column_number)
+
+                self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+ 
+                self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, '\n'.join(__names.pop(0)))
+
+                print('__names is')
+                print(__names)
+
+                while __names:
+                
+                    if self._pdf.get_y() > ((72 * 10) - (10 * (1 + len(__names[0])))):
+                        print('overflows...')
+                        _next_column()
+                
+                    self._pdf.set_xy(72 if _column_number == 1 else 72 * self.__SECOND_COLUMN_X_IN, self._pdf.get_y())
+ 
+                    self._pdf.multi_cell(72 * self.__DUAL_COLUMN_WIDTH_IN, 10.0, '\n'.join(__names.pop(0)))
+
+
                 print(_summary + ' ' + f' x: {self._pdf.get_x()}, y: {self._pdf.get_y()}')
 
         self.__write_footer(self.__index_page, section='X', sub='E')
